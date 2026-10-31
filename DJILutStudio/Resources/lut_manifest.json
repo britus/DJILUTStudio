@@ -1,0 +1,575 @@
+{
+  "version": "2.0.0",
+  "name": "DJI LUT Studio Library",
+  "description": "Comprehensive official and creative 3D LUT collection for DJI drones, cameras, and gimbals",
+  "categories": [
+    {
+      "id": "drones",
+      "name": "Drones & Air Units",
+      "devices": [
+        {
+          "id": "o4",
+          "name": "DJI O4 Pro / Air Unit",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["O4", "O4_AIR", "_D"],
+          "luts": [
+            {
+              "id": "o4_dlogm_rec709",
+              "name": "Official D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_O4_Air_Unit_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official DJI tetrahedral 3D LUT for O4 Air Unit series. 10-bit broadcast standard."
+            }
+          ]
+        },
+        {
+          "id": "avata_2",
+          "name": "DJI Avata 2",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["AVATA2", "AVATA_2"],
+          "luts": [
+            {
+              "id": "avata2_dlogm_rec709",
+              "name": "Official Avata 2 D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Avata_2_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official DJI Avata 2 D-Log M to Rec.709 10-bit conversion LUT."
+            }
+          ]
+        },
+        {
+          "id": "avata_360",
+          "name": "DJI Avata 360",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["AVATA360", "AVATA_360"],
+          "luts": [
+            {
+              "id": "avata360_dlogm_rec709",
+              "name": "Official Avata 360 D-Log M to Rec.709",
+              "type": "technical",
+              "file": "drones/DJI_Avata_360_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official 360 immersive D-Log M conversion LUT."
+            }
+          ]
+        },
+        {
+          "id": "mavic_3",
+          "name": "DJI Mavic 3 / Pro / Classic / Cine",
+          "default_profile": "D-Log",
+          "filename_patterns": ["MAVIC3", "M3", "M3P", "MAVIC_3"],
+          "luts": [
+            {
+              "id": "m3_dlog_rec709_std",
+              "name": "Official Mavic 3 D-Log to Rec.709 (Standard)",
+              "type": "technical",
+              "file": "cinema/zenmuse_x7/D-Log to Rec709.cube",
+              "recommended": true,
+              "description": "Official reference conversion for Mavic 3 / Cine Hasselblad sensor D-Log footage."
+            },
+            {
+              "id": "m3_dlog_rec709_vivid",
+              "name": "Official Mavic 3 D-Log to Rec.709 (Vivid)",
+              "type": "technical",
+              "file": "drones/DJI_Mavic_3_D-Log_to_Rec709_Vivid.cube",
+              "recommended": false,
+              "description": "Punchier sky blues, rich golden highlights and vibrant foliage."
+            },
+            {
+              "id": "m3_dlogm_rec709",
+              "name": "Official Mavic 3 D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Mavic_3_D-Log_M_to_Rec709.cube",
+              "recommended": false,
+              "description": "Official conversion for Mavic 3 footage recorded in 10-bit D-Log M profile."
+            }
+          ]
+        },
+        {
+          "id": "mavic_4_pro",
+          "name": "DJI Mavic 4 Pro",
+          "default_profile": "D-Log",
+          "filename_patterns": ["MAVIC4", "M4P", "MAVIC_4"],
+          "luts": [
+            {
+              "id": "m4p_dlog_std",
+              "name": "Official Mavic 4 Pro D-Log to Rec.709 (Standard)",
+              "type": "technical",
+              "file": "drones/DJI_Mavic_4_Pro_D-Log_to_Rec709_Standard.cube",
+              "recommended": true,
+              "description": "Next-gen flagship Hasselblad sensor natural color grade."
+            },
+            {
+              "id": "m4p_dlog_vivid",
+              "name": "Official Mavic 4 Pro D-Log to Rec.709 (Vivid)",
+              "type": "technical",
+              "file": "drones/DJI_Mavic_4_Pro_D-Log_to_Rec709_Vivid.cube",
+              "recommended": false,
+              "description": "High vibrancy conversion with expanded dynamic range."
+            },
+            {
+              "id": "m4p_dlogm",
+              "name": "Official Mavic 4 Pro D-Log M to Rec.709",
+              "type": "technical",
+              "file": "drones/DJI_Mavic_4_Pro_D-Log_M_to_Rec709.cube",
+              "recommended": false,
+              "description": "Conversion for Mavic 4 Pro telephoto and wide D-Log M profiles."
+            }
+          ]
+        },
+        {
+          "id": "air_3_3s",
+          "name": "DJI Air 3 / Air 3S",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["AIR3", "AIR_3", "AIR3S", "AIR_3S"],
+          "luts": [
+            {
+              "id": "air3_dlogm",
+              "name": "Official Air 3 D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Air_3_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Standard conversion for DJI Air 3 dual cameras in D-Log M."
+            },
+            {
+              "id": "air3s_dlogm",
+              "name": "Official Air 3S D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Air_3S_D-Log_M_to_Rec709.cube",
+              "recommended": false,
+              "description": "Optimized for Air 3S 1-inch sensor color characteristics."
+            }
+          ]
+        },
+        {
+          "id": "mini_4_5_pro",
+          "name": "DJI Mini 4 Pro / Mini 5 Pro",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["MINI4", "MINI_4", "MINI5", "MINI_5"],
+          "luts": [
+            {
+              "id": "mini4_dlogm",
+              "name": "Official Mini 4 Pro D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Mini_4_Pro_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official 10-bit D-Log M conversion for Mini 4 Pro sub-249g drone."
+            },
+            {
+              "id": "mini5_dlogm",
+              "name": "Official Mini 5 Pro D-Log M to Rec.709",
+              "type": "technical",
+              "file": "drones/DJI_Mini_5_Pro_D-Log_M_to_Rec709.cube",
+              "recommended": false,
+              "description": "Next-gen Mini 5 Pro 10-bit D-Log M conversion profile."
+            }
+          ]
+        },
+        {
+          "id": "dji_flip",
+          "name": "DJI Flip",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["FLIP", "DJI_FLIP"],
+          "luts": [
+            {
+              "id": "flip_dlogm",
+              "name": "Official DJI Flip D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "drones/DJI_Flip_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official conversion for DJI Flip footage."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_pocket",
+      "name": "Action & Pocket Series",
+      "devices": [
+        {
+          "id": "pocket_3",
+          "name": "DJI Osmo Pocket 3",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["POCKET3", "POCKET_3", "OP3"],
+          "luts": [
+            {
+              "id": "op3_dlogm",
+              "name": "Official Pocket 3 D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Pocket_3_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official 1-inch sensor D-Log M Rec.709 conversion for Osmo Pocket 3."
+            },
+            {
+              "id": "op3_spring",
+              "name": "Master Look: Spring Pro",
+              "type": "creative",
+              "file": "creative/pocket_3/DJI OSMO Pocket 3 Spring Pro.cube",
+              "recommended": false,
+              "description": "Fresh vibrant greens, soft warm skin tones, and airy bright daylight."
+            },
+            {
+              "id": "op3_summer",
+              "name": "Master Look: Summer Pro",
+              "type": "creative",
+              "file": "creative/pocket_3/DJI OSMO Pocket 3 Summer Pro.cube",
+              "recommended": false,
+              "description": "Deep cyan sky and ocean blues, sun-kissed golden highlights."
+            },
+            {
+              "id": "op3_autumn",
+              "name": "Master Look: Autumn Pro",
+              "type": "creative",
+              "file": "creative/pocket_3/DJI OSMO Pocket 3 Autumn Pro.cube",
+              "recommended": false,
+              "description": "Warm amber shadows, terracotta tones, and rich foliage."
+            },
+            {
+              "id": "op3_winter",
+              "name": "Master Look: Winter Pro",
+              "type": "creative",
+              "file": "creative/pocket_3/DJI OSMO Pocket 3 Winter Pro.cube",
+              "recommended": false,
+              "description": "Crisp high-contrast cool palette with clean neutral snow highlights."
+            }
+          ]
+        },
+        {
+          "id": "pocket_4_4p",
+          "name": "DJI Osmo Pocket 4 / Pocket 4 Pro",
+          "default_profile": "D-Log",
+          "filename_patterns": ["POCKET4", "POCKET_4", "OP4", "OP4P"],
+          "luts": [
+            {
+              "id": "op4_dlog_std",
+              "name": "Official Pocket 4 D-Log to Rec.709 V2",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Pocket_4_D-Log_to_Rec709_V2.cube",
+              "recommended": true,
+              "description": "Official flagship natural conversion for Osmo Pocket 4 series."
+            },
+            {
+              "id": "op4_dlog_vivid",
+              "name": "Official Pocket 4 D-Log to Rec.709 (Vivid)",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Pocket_4_D-Log_to_Rec709_Vivid_V2.cube",
+              "recommended": false,
+              "description": "Enhanced saturation and contrast for punchy travel video."
+            },
+            {
+              "id": "op4p_dlog2_std",
+              "name": "Official Pocket 4P D-Log2 to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Pocket_4P_D-Log2_to_Rec709.cube",
+              "recommended": false,
+              "description": "Wide-gamut D-Log2 logarithmic sensor profile conversion."
+            },
+            {
+              "id": "op4p_dlog2_vivid",
+              "name": "Official Pocket 4P D-Log2 to Rec.709 (Vivid)",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Pocket_4P_D-Log2_to_Rec709_Vivid.cube",
+              "recommended": false,
+              "description": "Vivid color mapping for D-Log2 footage."
+            }
+          ]
+        },
+        {
+          "id": "action_4",
+          "name": "DJI Osmo Action 4",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["ACTION4", "ACTION_4", "OA4"],
+          "luts": [
+            {
+              "id": "oa4_dlogm",
+              "name": "Official Action 4 D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Action_4_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official 10-bit D-Log M conversion for Action 4 sports footage."
+            },
+            {
+              "id": "oa4_ice",
+              "name": "Action Look: Ice Pro",
+              "type": "creative",
+              "file": "creative/action_4/DJI OSMO Action 4 Ice Pro.cube",
+              "recommended": false,
+              "description": "Cool glacial hues for snowboarding, skiing and winter sports."
+            },
+            {
+              "id": "oa4_nature",
+              "name": "Action Look: Nature Pro",
+              "type": "creative",
+              "file": "creative/action_4/DJI OSMO Action 4 Nature Pro.cube",
+              "recommended": false,
+              "description": "Balanced warm sunlight and vibrant landscape greens."
+            },
+            {
+              "id": "oa4_forest",
+              "name": "Action Look: Forest Pro",
+              "type": "creative",
+              "file": "creative/action_4/DJI OSMO Action 4 Forest Pro.cube",
+              "recommended": false,
+              "description": "Rich deep moss, mountain biking, trail and outdoor foliage grade."
+            }
+          ]
+        },
+        {
+          "id": "action_5_pro",
+          "name": "DJI Osmo Action 5 Pro",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["ACTION5", "ACTION_5", "OA5", "OA5P"],
+          "luts": [
+            {
+              "id": "oa5p_dlogm",
+              "name": "Official Action 5 Pro D-Log M to Rec.709 V1",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Action_5_Pro_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official conversion for Action 5 Pro next-gen sensor."
+            },
+            {
+              "id": "oa5p_mei",
+              "name": "Master Look: Mei (Plum)",
+              "type": "creative",
+              "file": "creative/action_5_pro/DJI OSMO Action 5 Pro Mei.cube",
+              "recommended": false,
+              "description": "Delicate magenta skin tones, soft romantic shadows, cinematic bloom."
+            },
+            {
+              "id": "oa5p_ju",
+              "name": "Master Look: Ju (Chrysanthemum)",
+              "type": "creative",
+              "file": "creative/action_5_pro/DJI OSMO Action 5 Pro Ju.cube",
+              "recommended": false,
+              "description": "Golden autumn amber and sunset radiance."
+            },
+            {
+              "id": "oa5p_zhu",
+              "name": "Master Look: Zhu (Bamboo)",
+              "type": "creative",
+              "file": "creative/action_5_pro/DJI OSMO Action 5 Pro Zhu.cube",
+              "recommended": false,
+              "description": "Lush vibrant greens and sharp outdoor micro-contrast."
+            },
+            {
+              "id": "oa5p_lan",
+              "name": "Master Look: Lan (Orchid)",
+              "type": "creative",
+              "file": "creative/action_5_pro/DJI OSMO Action 5 Pro Lan.cube",
+              "recommended": false,
+              "description": "Clean cool oceanic teal and sky tones."
+            }
+          ]
+        },
+        {
+          "id": "action_6",
+          "name": "DJI Osmo Action 6",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["ACTION6", "ACTION_6", "OA6"],
+          "luts": [
+            {
+              "id": "oa6_dlogm",
+              "name": "Official Action 6 D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Action_6_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official conversion for DJI Action 6 series."
+            }
+          ]
+        },
+        {
+          "id": "lito",
+          "name": "DJI Lito / Lito X1",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["LITO", "LITO_X1", "LITOX1"],
+          "luts": [
+            {
+              "id": "lito_x1_dlogm",
+              "name": "Official DJI Lito X1 D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Lito_X1_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official conversion LUT for DJI Lito series compact cameras."
+            }
+          ]
+        },
+        {
+          "id": "osmo_nano",
+          "name": "DJI Osmo Nano",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["NANO", "OSMO_NANO"],
+          "luts": [
+            {
+              "id": "osmo_nano_dlogm",
+              "name": "Official Osmo Nano D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Nano_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official Osmo Nano ultralight wearable conversion."
+            }
+          ]
+        },
+        {
+          "id": "osmo_360",
+          "name": "DJI Osmo 360",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["OSMO360", "OSMO_360"],
+          "luts": [
+            {
+              "id": "osmo_360_dlogm",
+              "name": "Official Osmo 360 D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_360_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official 360 panoramic conversion profile."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cinema",
+      "name": "Cinema & Enterprise Systems",
+      "devices": [
+        {
+          "id": "zenmuse_x7_ronin_inspire",
+          "name": "DJI Zenmuse X7 / Ronin 4D / Inspire 3",
+          "default_profile": "D-Log",
+          "filename_patterns": ["X7", "ZENMUSE", "RONIN", "INSPIRE"],
+          "luts": [
+            {
+              "id": "x7_dlog_rec709",
+              "name": "Official Cinema D-Log to Rec.709",
+              "type": "technical",
+              "file": "cinema/zenmuse_x7/D-Log to Rec709.cube",
+              "recommended": true,
+              "description": "Industry reference 3D LUT for Super 35 / Full Frame cinema sensors."
+            },
+            {
+              "id": "x7_linear_dlog",
+              "name": "Official Linear to D-Log",
+              "type": "technical",
+              "file": "cinema/zenmuse_x7_linear/Linear to D-Log.cube",
+              "recommended": false,
+              "description": "Converts Linear RAW space to standardized D-Log curve."
+            }
+          ]
+        },
+        {
+          "id": "phantom_4_pro",
+          "name": "DJI Phantom 4 / Phantom 4 Pro",
+          "default_profile": "D-Log",
+          "filename_patterns": ["PHANTOM4", "P4", "P4P"],
+          "luts": [
+            {
+              "id": "p4_dlog_rec709",
+              "name": "Official Phantom 4 D-Log to Rec.709",
+              "type": "technical",
+              "file": "cinema/phantom_4/DJI_Phantom4_DLOG2Rec709.cube",
+              "recommended": true,
+              "description": "Calibrated Rec.709 mapping for Phantom 4 1-inch mechanical shutter sensor."
+            },
+            {
+              "id": "p4_dlog_srgb",
+              "name": "Official Phantom 4 D-Log to sRGB Improv",
+              "type": "technical",
+              "file": "cinema/phantom_4/DJI_Phantom4_DLOG2sRGB_Improv.cube",
+              "recommended": false,
+              "description": "Improved sRGB mapping for web/display delivery."
+            }
+          ]
+        },
+        {
+          "id": "generic_dji",
+          "name": "DJI Generic / Universal D-Log M",
+          "default_profile": "D-Log M",
+          "filename_patterns": [],
+          "luts": [
+            {
+              "id": "generic_dlogm_rec709",
+              "name": "Official Universal DJI D-Log M to Rec.709",
+              "type": "technical",
+              "file": "generic/DJI_Generic_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Universal fallback conversion LUT matching all DJI D-Log M devices."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cinematic_looks",
+      "name": "Artistic Film Looks & Styles",
+      "devices": [
+        {
+          "id": "creative_looks",
+          "name": "Film Emulations & Color Grades",
+          "default_profile": "Any Rec.709 or Flat",
+          "filename_patterns": [],
+          "luts": [
+            {
+              "id": "look_vibrant_pop",
+              "name": "Vibrant Pop Look",
+              "type": "look",
+              "file": "looks/Look_Vibrant_Pop.cube",
+              "recommended": true,
+              "description": "Punchy saturated colors, rich micro-contrast, crisp sky blues and vibrant greens."
+            },
+            {
+              "id": "look_cinematic_film",
+              "name": "Cinematic 35mm Film",
+              "type": "look",
+              "file": "looks/Look_Cinematic_Film.cube",
+              "recommended": false,
+              "description": "Classic Kodak/Fuji film stock emulation with rich velvety shadows and warm highlights."
+            },
+            {
+              "id": "look_golden_hour",
+              "name": "Golden Hour Warmth",
+              "type": "look",
+              "file": "looks/Look_Golden_Hour.cube",
+              "recommended": false,
+              "description": "Rich honey sunlight, sunset glow, smooth tonal roll-off."
+            },
+            {
+              "id": "look_teal_orange",
+              "name": "Blockbuster Teal & Orange",
+              "type": "look",
+              "file": "looks/Look_Teal_Orange.cube",
+              "recommended": false,
+              "description": "Hollywood complementary color separation with warm skin and rich teal shadows."
+            },
+            {
+              "id": "look_clean_commercial",
+              "name": "Clean Commercial Broadcast",
+              "type": "look",
+              "file": "looks/Look_Clean_Commercial.cube",
+              "recommended": false,
+              "description": "Crystal clean neutral white balance, accurate skin tones, commercial TV grade."
+            },
+            {
+              "id": "look_moody_noir",
+              "name": "Moody Noir Black & White",
+              "type": "look",
+              "file": "looks/Look_Moody_Noir_BW.cube",
+              "recommended": false,
+              "description": "High-contrast monochrome film curve with deep black punch."
+            },
+            {
+              "id": "look_dcinelike_boost",
+              "name": "D-Cinelike Natural Booster",
+              "type": "look",
+              "file": "looks/Look_DCinelike_Natural_Boost.cube",
+              "recommended": false,
+              "description": "Restores contrast and rich vibrance to flat D-Cinelike clips (Mini 3 Pro, Action 3, Pocket 2)."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
