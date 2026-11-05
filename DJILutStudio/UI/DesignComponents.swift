@@ -1,7 +1,7 @@
 // Adapted from EoF MCP Studio's DesignComponents.swift
 // EoF Software Lab · 2026
 import SwiftUI
-import AppKit
+internal import AppKit
 
 private func adaptiveNSColor(light: NSColor, dark: NSColor) -> NSColor {
     NSColor(name: nil) { appearance in

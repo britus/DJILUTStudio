@@ -1,4 +1,5 @@
 import SwiftUI
+internal import AppKit
 internal import UniformTypeIdentifiers
 
 struct StudioView: View {
@@ -14,7 +15,6 @@ struct StudioView: View {
     @State private var isProcessing = false
     @State private var status = "Bereit für deinen nächsten Clip"
     @State private var progress = 0.0
-    @State private var showVideoPicker = false
     @State private var showOutputPicker = false
     @State private var errorMessage: String?
 
@@ -33,7 +33,6 @@ struct StudioView: View {
         }
         .background(DS.chatBg)
         .preferredColorScheme(.dark)
-        .fileImporter(isPresented: $showVideoPicker, allowedContentTypes: [.movie, .video], allowsMultipleSelection: false, onCompletion: importVideo)
         .fileImporter(isPresented: $showOutputPicker, allowedContentTypes: [.folder], allowsMultipleSelection: false, onCompletion: chooseOutput)
         .alert("Export fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) { errorMessage = nil }
@@ -104,19 +103,28 @@ struct StudioView: View {
         }
     }
 
+    // MARK: - SOURCE FOOTAGE
     private var videoCard: some View {
         DS.Card(icon: "film", title: "SOURCE FOOTAGE", accent: .cyan) {
-            Button { showVideoPicker = true } label: {
-                HStack(spacing: 16) {
-                    Image(systemName: videoURL == nil ? "plus.square.dashed" : "film.fill").font(.system(size: 25)).foregroundStyle(.cyan).frame(width: 58, height: 58).background(.cyan.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(videoURL?.lastPathComponent ?? "Drop a clip or browse files").font(.system(size: 13, weight: .semibold)).foregroundStyle(DS.textPrimary)
-                        Text(videoURL?.path ?? "MP4, MOV, MKV or M4V · camera profile suggested from filename").font(.system(size: 11)).foregroundStyle(DS.textSecondary).lineLimit(1).truncationMode(.middle)
-                    }
-                    Spacer()
-                    Text(videoURL == nil ? "BROWSE" : "CHANGE").font(.system(size: 10, weight: .bold)).tracking(0.5).foregroundStyle(.cyan).padding(.horizontal, 12).padding(.vertical, 8).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-                }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(DS.codeBg.opacity(0.45), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(DS.border.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: videoURL == nil ? [5, 4] : [])))
-            }.buttonStyle(.plain).onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            // Wrap the button in a VStack so .onDrop does not swallow Button taps on macOS.
+            VStack {
+                Button {
+                    presentVideoPicker()
+                }
+                label: {
+                    HStack(spacing: 16) {
+                        Image(systemName: videoURL == nil ? "plus.square.dashed" : "film.fill").font(.system(size: 25)).foregroundStyle(.cyan).frame(width: 58, height: 58).background(.cyan.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(videoURL?.lastPathComponent ?? "Drop a clip or browse files").font(.system(size: 13, weight: .semibold)).foregroundStyle(DS.textPrimary)
+                            Text(videoURL?.path ?? "MP4, MOV, MKV or M4V · camera profile suggested from filename").font(.system(size: 11)).foregroundStyle(DS.textSecondary).lineLimit(1).truncationMode(.middle)
+                        }
+                        Spacer()
+                        Text(videoURL == nil ? "BROWSE" : "CHANGE").font(.system(size: 10, weight: .bold)).tracking(0.5).foregroundStyle(.cyan).padding(.horizontal, 12).padding(.vertical, 8).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                    }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(DS.codeBg.opacity(0.45), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(DS.border.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: videoURL == nil ? [5, 4] : [])))
+                }.buttonStyle(.plain)
+            }
+            .contentShape(Rectangle())
+            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                 guard let provider = providers.first else { return false }
                 _ = provider.loadObject(ofClass: URL.self) { url, _ in if let url { DispatchQueue.main.async { selectVideo(url) } } }
                 return true
@@ -185,9 +193,17 @@ struct StudioView: View {
         selectedLUT = activeDevice?.luts.first(where: { $0.recommended == true })?.id ?? activeDevice?.luts.first?.id ?? ""
     }
 
-    private func importVideo(_ result: Result<[URL], Error>) {
-        if case .success(let urls) = result, let url = urls.first { selectVideo(url) }
+    private func presentVideoPicker() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.movie, .video]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        selectVideo(url)
     }
+
     private func chooseOutput(_ result: Result<[URL], Error>) {
         if case .success(let urls) = result, let url = urls.first { outputFolder = url }
     }
@@ -215,8 +231,11 @@ struct StudioView: View {
     }
 
     private func render(videoURL: URL, lutURL: URL) async throws -> URL {
-        guard let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"].first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
-            throw NSError(domain: "DJILutStudio", code: 1, userInfo: [NSLocalizedDescriptionKey: "FFmpeg is required. Install it with Homebrew (brew install ffmpeg)."])
+        guard let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"].first(where: {
+            FileManager.default.isExecutableFile(atPath: $0)
+        }) else {
+            throw NSError(domain: "DJILutStudio", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "FFmpeg is required. Install it with Homebrew (brew install ffmpeg)."])
         }
         let folder = outputFolder ?? videoURL.deletingLastPathComponent()
         let output = folder.appending(path: "\(videoURL.deletingPathExtension().lastPathComponent)_graded.\(codec == "ProRes" ? "mov" : "mp4")")
