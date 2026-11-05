@@ -3,6 +3,9 @@ internal import AppKit
 internal import UniformTypeIdentifiers
 
 struct StudioView: View {
+    private static let defaultFFmpegPaths = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
+    private static let ffmpegBookmarkKey = "ffmpegExecutableBookmark"
+
     private let catalog = LUTCatalog.load()
     @State private var videoURL: URL?
     @State private var selectedDevice = ""
@@ -17,6 +20,9 @@ struct StudioView: View {
     @State private var progress = 0.0
     @State private var showOutputPicker = false
     @State private var errorMessage: String?
+    @State private var ffmpegURL: URL?
+    @State private var ffmpegHasSecurityScope = false
+    @State private var ffmpegConfigurationError: String?
 
     private var activeDevice: LUTDevice? { catalog.devices.first { $0.id == selectedDevice } }
     private var deviceLUTs: [LUTProfile] { activeDevice?.luts ?? [] }
@@ -38,6 +44,7 @@ struct StudioView: View {
             Button("OK", role: .cancel) { errorMessage = nil }
         } message: { Text(errorMessage ?? "Unbekannter Fehler") }
             .onAppear(perform: setDefaults)
+            .onDisappear(perform: stopFFmpegSecurityScope)
     }
 
     private var sidebar: some View {
@@ -59,7 +66,8 @@ struct StudioView: View {
             Spacer()
             VStack(alignment: .leading, spacing: 10) {
                 sectionLabel("SYSTEM")
-                Label("FFmpeg", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label("FFmpeg", systemImage: ffmpegURL == nil ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
+                    .foregroundStyle(ffmpegURL == nil ? DS.orange : DS.green)
                 Label("Apple Silicon · Metal", systemImage: "cpu").foregroundStyle(DS.textSecondary)
             }.font(.system(size: 11, weight: .medium))
             Text("DJI LUT Studio 2.0 · macOS").font(.system(size: 10)).foregroundStyle(DS.textSecondary)
@@ -76,8 +84,8 @@ struct StudioView: View {
                 }
                 Spacer()
                 HStack(spacing: 8) {
-                    Circle().fill(.green).frame(width: 7, height: 7)
-                    Text("ENGINE READY").font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(0.5)
+                    Circle().fill(ffmpegURL == nil ? DS.orange : DS.green).frame(width: 7, height: 7)
+                    Text(ffmpegURL == nil ? "FFMPEG REQUIRED" : "ENGINE READY").font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(0.5)
                 }.foregroundStyle(DS.textSecondary).padding(.horizontal, 12).padding(.vertical, 8).background(DS.buttonBg, in: Capsule())
             }.padding(.horizontal, 28).padding(.vertical, 20)
             Rectangle().fill(DS.divider).frame(height: 1)
@@ -86,6 +94,7 @@ struct StudioView: View {
                     videoCard
                     HStack(alignment: .top, spacing: 16) { cameraCard; gradeCard }
                     exportCard
+                    ffmpegCard
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 5) {
                             Text(status).font(.system(size: 11, weight: .medium))
@@ -96,7 +105,7 @@ struct StudioView: View {
                             HStack(spacing: 9) { if isProcessing { ProgressView().controlSize(.small) } else { Image(systemName: "sparkles") }; Text(isProcessing ? "GRADING…" : "APPLY LUT & EXPORT") }
                                 .font(.system(size: 12, weight: .bold)).tracking(0.4).foregroundStyle(Color.black.opacity(0.9))
                                 .padding(.horizontal, 20).frame(height: 44).background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
-                        }.buttonStyle(.plain).disabled(videoURL == nil || isProcessing)
+                        }.buttonStyle(.plain).disabled(videoURL == nil || ffmpegURL == nil || isProcessing)
                     }.padding(.top, 2)
                 }.padding(24).frame(maxWidth: 1040).frame(maxWidth: .infinity)
             }
@@ -181,6 +190,32 @@ struct StudioView: View {
         }
     }
 
+    // MARK: - FFMPEG CONFIGURATION
+    private var ffmpegCard: some View {
+        DS.Card(icon: "terminal", title: "FFMPEG CONFIGURATION", accent: ffmpegURL == nil ? DS.orange : DS.green) {
+            HStack(spacing: 16) {
+                Image(systemName: ffmpegURL == nil ? "exclamationmark.triangle" : "checkmark.circle.fill")
+                    .font(.system(size: 22)).foregroundStyle(ffmpegURL == nil ? DS.orange : DS.green)
+                    .frame(width: 44, height: 44)
+                    .background((ffmpegURL == nil ? DS.orange : DS.green).opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(ffmpegURL == nil ? "FFmpeg is not configured" : "FFmpeg executable")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(DS.textPrimary)
+                    Text(ffmpegURL?.path ?? ffmpegConfigurationError ?? "Select the ffmpeg executable to enable exports.")
+                        .font(.system(size: 11)).foregroundStyle(DS.textSecondary).lineLimit(1).truncationMode(.middle)
+                }
+                Spacer()
+                Button(action: presentFFmpegPicker) {
+                    Text("BROWSE").font(.system(size: 10, weight: .bold)).tracking(0.5).foregroundStyle(.cyan)
+                        .padding(.horizontal, 12).padding(.vertical, 8).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                }.buttonStyle(.plain)
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(DS.codeBg.opacity(0.45), in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(DS.border.opacity(0.8)))
+        }
+    }
+
     private func sectionLabel(_ text: String) -> some View { Text(text).font(.system(size: 9, weight: .bold)).tracking(1.1).foregroundStyle(DS.textSecondary).padding(.leading, 8) }
     private func sidebarItem(_ title: String, icon: String, selected: Bool = false) -> some View {
         HStack(spacing: 10) { Image(systemName: icon).frame(width: 16); Text(title); Spacer() }.font(.system(size: 12, weight: selected ? .semibold : .regular))
@@ -191,6 +226,9 @@ struct StudioView: View {
     private func setDefaults() {
         selectedDevice = catalog.devices.first(where: { $0.id == "o4" })?.id ?? catalog.devices.first?.id ?? ""
         selectedLUT = activeDevice?.luts.first(where: { $0.recommended == true })?.id ?? activeDevice?.luts.first?.id ?? ""
+        if detectFFmpeg() == nil {
+            DispatchQueue.main.async { presentFFmpegPicker() }
+        }
     }
 
     private func presentVideoPicker() {
@@ -217,12 +255,147 @@ struct StudioView: View {
         } else { status = "Clip loaded · choose the matching camera profile" }
     }
 
+    @discardableResult
+    private func detectFFmpeg() -> URL? {
+        if let ffmpegURL, isExecutableFFmpeg(ffmpegURL) {
+            ffmpegConfigurationError = nil
+            return ffmpegURL
+        }
+
+        stopFFmpegSecurityScope()
+        ffmpegURL = nil
+        ffmpegConfigurationError = nil
+
+        if let restoredURL = restoreFFmpegBookmark() {
+            ffmpegURL = restoredURL
+            ffmpegHasSecurityScope = true
+            ffmpegConfigurationError = nil
+            return restoredURL
+        }
+
+        for path in Self.defaultFFmpegPaths {
+            let candidate = URL(fileURLWithPath: path)
+            if isExecutableFFmpeg(candidate) {
+                ffmpegURL = candidate
+                ffmpegConfigurationError = nil
+                return candidate
+            }
+        }
+
+        ffmpegConfigurationError = ffmpegConfigurationError ?? "Automatic detection failed. Select the ffmpeg executable manually."
+        return nil
+    }
+
+    private func isExecutableFFmpeg(_ url: URL) -> Bool {
+        let path = url.path
+        return FileManager.default.fileExists(atPath: path) && FileManager.default.isExecutableFile(atPath: path)
+    }
+
+    private func restoreFFmpegBookmark() -> URL? {
+        guard let bookmark = UserDefaults.standard.data(forKey: Self.ffmpegBookmarkKey) else { return nil }
+
+        do {
+            var isStale = false
+            let url = try URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
+            guard url.startAccessingSecurityScopedResource() else {
+                UserDefaults.standard.removeObject(forKey: Self.ffmpegBookmarkKey)
+                ffmpegConfigurationError = "Access to the saved FFmpeg executable was not granted. Select it again."
+                return nil
+            }
+
+            guard isExecutableFFmpeg(url) else {
+                url.stopAccessingSecurityScopedResource()
+                UserDefaults.standard.removeObject(forKey: Self.ffmpegBookmarkKey)
+                ffmpegConfigurationError = "The saved FFmpeg executable is unavailable or is not executable. Select it again."
+                return nil
+            }
+
+            if isStale {
+                do {
+                    try saveFFmpegBookmark(for: url)
+                } catch {
+                    url.stopAccessingSecurityScopedResource()
+                    UserDefaults.standard.removeObject(forKey: Self.ffmpegBookmarkKey)
+                    ffmpegConfigurationError = "The saved FFmpeg selection could not be refreshed: \(error.localizedDescription)"
+                    return nil
+                }
+            }
+            return url
+        } catch {
+            UserDefaults.standard.removeObject(forKey: Self.ffmpegBookmarkKey)
+            ffmpegConfigurationError = "The saved FFmpeg selection could not be restored: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    private func saveFFmpegBookmark(for url: URL) throws {
+        let bookmark = try url.bookmarkData(
+            options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        UserDefaults.standard.set(bookmark, forKey: Self.ffmpegBookmarkKey)
+    }
+
+    private func presentFFmpegPicker() {
+        let panel = NSOpenPanel()
+        let preferredURL = ffmpegURL ?? URL(fileURLWithPath: Self.defaultFFmpegPaths[0])
+        panel.directoryURL = preferredURL.deletingLastPathComponent()
+        panel.nameFieldStringValue = "ffmpeg"
+        panel.message = "Select the ffmpeg executable. DJI LUT Studio will remember your selection."
+        panel.prompt = "Select FFmpeg"
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        selectFFmpeg(url)
+    }
+
+    private func selectFFmpeg(_ url: URL) {
+        guard url.lastPathComponent == "ffmpeg" else {
+            ffmpegConfigurationError = "Select the executable named ffmpeg."
+            return
+        }
+        guard url.startAccessingSecurityScopedResource() else {
+            ffmpegConfigurationError = "Access to the selected FFmpeg executable was not granted."
+            return
+        }
+        guard isExecutableFFmpeg(url) else {
+            url.stopAccessingSecurityScopedResource()
+            ffmpegConfigurationError = "The selected file is not an executable FFmpeg binary."
+            return
+        }
+
+        do {
+            try saveFFmpegBookmark(for: url)
+            stopFFmpegSecurityScope()
+            ffmpegURL = url
+            ffmpegHasSecurityScope = true
+            ffmpegConfigurationError = nil
+            status = "FFmpeg configured · ready to export"
+        } catch {
+            url.stopAccessingSecurityScopedResource()
+            ffmpegConfigurationError = "The FFmpeg selection could not be saved: \(error.localizedDescription)"
+        }
+    }
+
+    private func stopFFmpegSecurityScope() {
+        if ffmpegHasSecurityScope { ffmpegURL?.stopAccessingSecurityScopedResource() }
+        ffmpegHasSecurityScope = false
+    }
+
     private func startExport() {
         guard let videoURL, let lutURL else { errorMessage = "The selected LUT resource could not be found."; return }
+        guard let ffmpegURL = detectFFmpeg() else {
+            status = "FFmpeg configuration required"
+            presentFFmpegPicker()
+            return
+        }
         isProcessing = true; progress = 0; status = "Preparing FFmpeg…"
         Task.detached(priority: .userInitiated) {
             do {
-                let output = try await render(videoURL: videoURL, lutURL: lutURL)
+                let output = try await render(videoURL: videoURL, lutURL: lutURL, ffmpegURL: ffmpegURL)
                 await MainActor.run { isProcessing = false; progress = 1; status = "Export complete · \(output.lastPathComponent)" }
             } catch {
                 await MainActor.run { isProcessing = false; status = "Export failed"; errorMessage = error.localizedDescription }
@@ -230,13 +403,7 @@ struct StudioView: View {
         }
     }
 
-    private func render(videoURL: URL, lutURL: URL) async throws -> URL {
-        guard let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"].first(where: {
-            FileManager.default.isExecutableFile(atPath: $0)
-        }) else {
-            throw NSError(domain: "DJILutStudio", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "FFmpeg is required. Install it with Homebrew (brew install ffmpeg)."])
-        }
+    private func render(videoURL: URL, lutURL: URL, ffmpegURL: URL) async throws -> URL {
         let folder = outputFolder ?? videoURL.deletingLastPathComponent()
         let output = folder.appending(path: "\(videoURL.deletingPathExtension().lastPathComponent)_graded.\(codec == "ProRes" ? "mov" : "mp4")")
         let filter = "lut3d=file='\(lutURL.path.replacingOccurrences(of: "'", with: "\\\\'"))':interp=tetrahedral"
@@ -249,7 +416,7 @@ struct StudioView: View {
         default: args += ["-c:v", "libx265", "-crf", String(Int(quality)), "-preset", "medium", "-pix_fmt", "yuv420p10le"]
         }
         args += ["-c:a", "copy", output.path]
-        let process = Process(); process.executableURL = URL(fileURLWithPath: ffmpeg); process.arguments = args
+        let process = Process(); process.executableURL = ffmpegURL; process.arguments = args
         let pipe = Pipe(); process.standardError = pipe; process.standardOutput = pipe
         try process.run()
         let handle = pipe.fileHandleForReading
@@ -261,7 +428,10 @@ struct StudioView: View {
             }
             try await Task.sleep(for: .milliseconds(80))
         }
-        guard process.terminationStatus == 0 else { throw NSError(domain: "DJILutStudio", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg could not encode this clip. Check the source file and FFmpeg installation."]) }
+        guard process.terminationStatus == 0 else {
+            throw NSError(domain: "DJILutStudio", code: Int(process.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey: "FFmpeg could not encode this clip. Check the source file and FFmpeg installation."])
+        }
         return output
     }
 
