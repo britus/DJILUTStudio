@@ -287,7 +287,8 @@ struct StudioView: View {
     }
 
     private func isExecutableFFmpeg(_ url: URL) -> Bool {
-        let path = url.path
+        // Homebrew links ffmpeg into /opt/homebrew/bin; sandbox validation needs the real binary.
+        let path = url.resolvingSymlinksInPath().path
         return FileManager.default.fileExists(atPath: path) && FileManager.default.isExecutableFile(atPath: path)
     }
 
@@ -329,7 +330,7 @@ struct StudioView: View {
     }
 
     private func saveFFmpegBookmark(for url: URL) throws {
-        let bookmark = try url.bookmarkData(
+        let bookmark = try url.resolvingSymlinksInPath().bookmarkData(
             options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
@@ -416,7 +417,7 @@ struct StudioView: View {
         default: args += ["-c:v", "libx265", "-crf", String(Int(quality)), "-preset", "medium", "-pix_fmt", "yuv420p10le"]
         }
         args += ["-c:a", "copy", output.path]
-        let process = Process(); process.executableURL = ffmpegURL; process.arguments = args
+        let process = Process(); process.executableURL = ffmpegURL.resolvingSymlinksInPath(); process.arguments = args
         let pipe = Pipe(); process.standardError = pipe; process.standardOutput = pipe
         try process.run()
         let handle = pipe.fileHandleForReading
