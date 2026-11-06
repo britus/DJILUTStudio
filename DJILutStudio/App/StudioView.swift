@@ -3,16 +3,18 @@ internal import AppKit
 internal import UniformTypeIdentifiers
 
 struct StudioView: View {
+    private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
+
     private let catalog = LUTCatalog.load()
     @State private var videoURL: URL?
     @State private var videoHasSecurityScope = false
     @State private var selectedDevice = ""
     @State private var selectedLUT = ""
-    @State private var selectedLook = "Natural Rec.709"
+    @AppStorage("studio.selectedLook") private var selectedLook = "Natural Rec.709"
     @State private var outputFolder: URL?
     @State private var outputFolderHasSecurityScope = false
     @State private var codec = "HEVC"
-    @State private var sharpen = false
+    @AppStorage("studio.fineDetailSharpening") private var sharpen = false
     @State private var isProcessing = false
     @State private var status = "Bereit für deinen nächsten Clip"
     @State private var progress = 0.0
@@ -38,7 +40,7 @@ struct StudioView: View {
         .alert("Export fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) { errorMessage = nil }
         } message: { Text(errorMessage ?? "Unbekannter Fehler") }
-            .onAppear(perform: setDefaults)
+            .onAppear(perform: restoreSettings)
             .onDisappear {
                 if !isProcessing { stopSecurityScopes() }
             }
@@ -232,6 +234,11 @@ struct StudioView: View {
         selectedLUT = activeDevice?.luts.first(where: { $0.recommended == true })?.id ?? activeDevice?.luts.first?.id ?? ""
     }
 
+    private func restoreSettings() {
+        setDefaults()
+        restoreOutputFolderBookmark()
+    }
+
     private func presentVideoPicker() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.movie, .video]
@@ -250,9 +257,63 @@ struct StudioView: View {
             errorMessage = String(localized: "Access to the selected export folder was not granted. Select it again.")
             return
         }
+
+        do {
+            let bookmark = try url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            UserDefaults.standard.set(bookmark, forKey: Self.outputFolderBookmarkKey)
+        } catch {
+            url.stopAccessingSecurityScopedResource()
+            errorMessage = String(localized: "The export folder selection could not be saved: \(error.localizedDescription)")
+            return
+        }
+
         if outputFolderHasSecurityScope { outputFolder?.stopAccessingSecurityScopedResource() }
         outputFolder = url
         outputFolderHasSecurityScope = true
+    }
+
+    private func restoreOutputFolderBookmark() {
+        guard !outputFolderHasSecurityScope,
+              let bookmark = UserDefaults.standard.data(forKey: Self.outputFolderBookmarkKey) else { return }
+
+        do {
+            var isStale = false
+            let url = try URL(
+                resolvingBookmarkData: bookmark,
+                options: .withSecurityScope,
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+            guard url.startAccessingSecurityScopedResource() else {
+                errorMessage = String(localized: "Access to the saved export folder was not restored. Select the folder again.")
+                return
+            }
+
+            if isStale {
+                do {
+                    let refreshedBookmark = try url.bookmarkData(
+                        options: [.withSecurityScope],
+                        includingResourceValuesForKeys: nil,
+                        relativeTo: nil
+                    )
+                    UserDefaults.standard.set(refreshedBookmark, forKey: Self.outputFolderBookmarkKey)
+                } catch {
+                    url.stopAccessingSecurityScopedResource()
+                    errorMessage = String(localized: "The saved export folder bookmark could not be refreshed.")
+                    return
+                }
+            }
+
+            outputFolder = url
+            outputFolderHasSecurityScope = true
+        } catch {
+            UserDefaults.standard.removeObject(forKey: Self.outputFolderBookmarkKey)
+            errorMessage = String(localized: "The saved export folder is unavailable. Select it again.")
+        }
     }
     private func selectVideo(_ url: URL) {
         guard !isProcessing else { return }
