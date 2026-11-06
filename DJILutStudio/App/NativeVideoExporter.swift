@@ -115,7 +115,8 @@ enum NativeVideoExporter {
 
         let progressTask = Task { @MainActor in
             while !Task.isCancelled {
-                progress(Double(session.progress))
+                let value = Double(session.progress)
+                progress(value.isFinite ? min(max(value, 0), 1) : 0)
                 try? await Task.sleep(for: .milliseconds(150))
             }
         }
@@ -356,37 +357,11 @@ private final class ProResHQPipeline: @unchecked Sendable {
         writer.startSession(atSourceTime: .zero)
 
         do {
-            var videoSample = videoOutput.copyNextSampleBuffer()
-            var audioSamples = audioStreams.map { $0.0.copyNextSampleBuffer() }
-            while videoSample != nil || audioSamples.contains(where: { $0 != nil }) {
-                try Task.checkCancellation()
-                let nextAudioIndex = audioSamples.indices
-                    .filter { audioSamples[$0] != nil }
-                    .min { left, right in
-                        let leftTime = audioSamples[left].map(CMSampleBufferGetPresentationTimeStamp)?.seconds ?? .infinity
-                        let rightTime = audioSamples[right].map(CMSampleBufferGetPresentationTimeStamp)?.seconds ?? .infinity
-                        return leftTime < rightTime
-                    }
-                let videoTime = videoSample.map(CMSampleBufferGetPresentationTimeStamp)?.seconds ?? .infinity
-                let audioTime = nextAudioIndex.flatMap { index in
-                    audioSamples[index].map { CMSampleBufferGetPresentationTimeStamp($0).seconds }
-                } ?? .infinity
+            try await transferAllSamples(progress: progress)
 
-                if videoTime <= audioTime, let sample = videoSample {
-                    try append(sample, to: videoInput)
-                    videoSample = videoOutput.copyNextSampleBuffer()
-                } else if let index = nextAudioIndex, let sample = audioSamples[index] {
-                    try append(sample, to: audioStreams[index].1)
-                    audioSamples[index] = audioStreams[index].0.copyNextSampleBuffer()
-                }
-
-                let currentTime = min(min(videoTime, audioTime), duration.seconds)
-                let fraction = duration.seconds > 0 ? currentTime / duration.seconds : 0
-                Task { @MainActor in progress(fraction) }
+            guard reader.status == .completed else {
+                throw reader.error ?? NativeVideoExporter.ExportError.writerFailed
             }
-
-            videoInput.markAsFinished()
-            audioStreams.forEach { $0.1.markAsFinished() }
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 self.writer.finishWriting {
                     if self.writer.status == .completed {
@@ -405,12 +380,68 @@ private final class ProResHQPipeline: @unchecked Sendable {
         }
     }
 
-    private func append(_ sample: CMSampleBuffer, to input: AVAssetWriterInput) throws {
-        while !input.isReadyForMoreMediaData {
-            Thread.sleep(forTimeInterval: 0.001)
+    private func transferAllSamples(
+        progress: @MainActor @Sendable @escaping (Double) -> Void
+    ) async throws {
+        let streams: [(AVAssetReaderOutput, AVAssetWriterInput)] = [(videoOutput, videoInput)] + audioStreams.map { ($0.0, $0.1) }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let completion = StreamCompletion(count: streams.count, continuation: continuation)
+            for (output, input) in streams {
+                let queue = DispatchQueue(label: "DJILutStudio.ProResHQ.\(UUID().uuidString)")
+                input.requestMediaDataWhenReady(on: queue) {
+                    while input.isReadyForMoreMediaData {
+                        guard let sample = output.copyNextSampleBuffer() else {
+                            input.markAsFinished()
+                            completion.finishOne()
+                            return
+                        }
+                        guard input.append(sample) else {
+                            let error = self.writer.error ?? NativeVideoExporter.ExportError.writerFailed
+                            self.reader.cancelReading()
+                            self.writer.cancelWriting()
+                            completion.fail(error)
+                            return
+                        }
+                        let timestamp = CMSampleBufferGetPresentationTimeStamp(sample).seconds
+                        let duration = self.duration.seconds
+                        let fraction = timestamp.isFinite && duration.isFinite && duration > 0
+                            ? min(max(timestamp / duration, 0), 1)
+                            : 0
+                        Task { @MainActor in progress(fraction) }
+                    }
+                }
+            }
         }
-        guard input.append(sample) else {
-            throw writer.error ?? NativeVideoExporter.ExportError.writerFailed
+    }
+}
+
+private final class StreamCompletion: @unchecked Sendable {
+    private let lock = NSLock()
+    private var remainingStreams: Int
+    private var isCompleted = false
+    private let continuation: CheckedContinuation<Void, Error>
+
+    init(count: Int, continuation: CheckedContinuation<Void, Error>) {
+        self.remainingStreams = count
+        self.continuation = continuation
+    }
+
+    func finishOne() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isCompleted else { return }
+        remainingStreams -= 1
+        if remainingStreams == 0 {
+            isCompleted = true
+            continuation.resume()
         }
+    }
+
+    func fail(_ error: Error) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isCompleted else { return }
+        isCompleted = true
+        continuation.resume(throwing: error)
     }
 }

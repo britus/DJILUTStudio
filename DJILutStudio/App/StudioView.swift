@@ -293,8 +293,9 @@ struct StudioView: View {
                     sharpen: sharpen,
                     look: selectedLook,
                     progress: { value in
-                        progress = value
-                        status = String(localized: "Color grading · \(Int(value * 100))%")
+                        let safeProgress = value.isFinite ? min(max(value, 0), 1) : 0
+                        progress = safeProgress
+                        status = String(localized: "Color grading · \(Int(safeProgress * 100))%")
                     }
                 )
                 isProcessing = false
