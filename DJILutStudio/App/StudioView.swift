@@ -99,10 +99,15 @@ struct StudioView: View {
                         }
                         Spacer()
                         Button(action: startExport) {
-                            HStack(spacing: 9) { if isProcessing { ProgressView().controlSize(.small) } else { Image(systemName: "sparkles") }; Text(isProcessing ? "GRADING…" : "APPLY LUT & EXPORT") }
-                                .font(.system(size: 12, weight: .bold)).tracking(0.4).foregroundStyle(Color.black.opacity(0.9))
-                                .padding(.horizontal, 20).frame(height: 44).background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
-                        }.buttonStyle(.plain).disabled(videoURL == nil || isProcessing)
+                            HStack(spacing: 9) {
+                                if isProcessing {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Image(systemName: "sparkles") }; Text(isProcessing ? "GRADING…" : "APPLY LUT & EXPORT")
+                            }
+                            .font(.system(size: 12, weight: .bold)).tracking(0.4).foregroundStyle(Color.black.opacity(0.9))
+                            .padding(.horizontal, 20).frame(height: 44).background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
+                        }.buttonStyle(.plain).disabled(videoURL == nil || outputFolder == nil || isProcessing)
                     }.padding(.top, 2)
                 }.padding(24).frame(maxWidth: 1040).frame(maxWidth: .infinity)
             }
@@ -179,12 +184,16 @@ struct StudioView: View {
                 Rectangle().fill(DS.divider).frame(width: 1, height: 38)
                 VStack(alignment: .leading, spacing: 7) {
                     Text("DESTINATION").font(.system(size: 9, weight: .bold)).tracking(0.8).foregroundStyle(DS.textSecondary)
-                    Button { showOutputPicker = true } label: { Label(outputFolder?.lastPathComponent ?? "Choose folder", systemImage: "folder").lineLimit(1) }.buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(DS.textPrimary).disabled(isProcessing)
+                    Button { showOutputPicker = true } label: {
+                        Label(outputFolder?.lastPathComponent ?? "Choose folder", systemImage: "folder")
+                        .lineLimit(1)
+                        .foregroundStyle(outputFolder == nil ? DS.orange : DS.textPrimary)
+                    }.buttonStyle(.plain).font(.system(size: 11)).disabled(isProcessing)
                 }
                 Spacer()
-                #if false
+#if false
                 Label("Comparison preview", systemImage: "rectangle.split.2x1").font(.system(size: 10)).foregroundStyle(DS.textSecondary)
-                #endif
+#endif
             }
         }
     }
