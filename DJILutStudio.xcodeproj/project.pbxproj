@@ -13,6 +13,7 @@
 		A10000000000000000000004 /* DesignComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* DesignComponents.swift */; };
 		A10000000000000000000005 /* lut_manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* lut_manifest.json */; };
 		A10000000000000000000006 /* lut_library in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* lut_library */; };
+		F718FAA1309D49700092AF52 /* NativeVideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */; };
 		F7CF151A30956B1200C6BAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F7CF151930956B1200C6BAF2 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,7 @@
 		B10000000000000000000005 /* lut_manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = lut_manifest.json; sourceTree = "<group>"; };
 		B10000000000000000000006 /* lut_library */ = {isa = PBXFileReference; lastKnownFileType = folder; path = lut_library; sourceTree = "<group>"; };
 		B10000000000000000000007 /* DJILutStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DJILutStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeVideoExporter.swift; sourceTree = "<group>"; };
 		F7CF151830956A3300C6BAF2 /* DJILutStudio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DJILutStudio.entitlements; sourceTree = "<group>"; };
 		F7CF151930956B1200C6BAF2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -71,6 +73,7 @@
 		D10000000000000000000004 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */,
 				B10000000000000000000001 /* DJILutStudioApp.swift */,
 				B10000000000000000000002 /* StudioView.swift */,
 			);
@@ -169,6 +172,7 @@
 			files = (
 				A10000000000000000000001 /* DJILutStudioApp.swift in Sources */,
 				A10000000000000000000002 /* StudioView.swift in Sources */,
+				F718FAA1309D49700092AF52 /* NativeVideoExporter.swift in Sources */,
 				A10000000000000000000003 /* LUTCatalog.swift in Sources */,
 				A10000000000000000000004 /* DesignComponents.swift in Sources */,
 			);
