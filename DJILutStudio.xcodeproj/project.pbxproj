@@ -58,8 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				F7CF151830956A3300C6BAF2 /* DJILutStudio.entitlements */,
-				D10000000000000000000004 /* App */,
-				D10000000000000000000005 /* UI */,
+				D10000000000000000000004 /* UI */,
 				D10000000000000000000006 /* Models */,
 				D10000000000000000000007 /* Resources */,
 			);
@@ -74,7 +73,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D10000000000000000000004 /* App */ = {
+		D10000000000000000000004 /* UI */ = {
 			isa = PBXGroup;
 			children = (
 				C30000000000000000000001 /* LUTLibraryWorkspace.swift */,
@@ -82,13 +81,6 @@
 				F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */,
 				B10000000000000000000001 /* DJILutStudioApp.swift */,
 				B10000000000000000000002 /* StudioView.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		D10000000000000000000005 /* UI */ = {
-			isa = PBXGroup;
-			children = (
 				B10000000000000000000004 /* DesignComponents.swift */,
 			);
 			path = UI;
