@@ -4,7 +4,7 @@ internal import UniformTypeIdentifiers
 
 struct StudioView: View {
     private enum Workspace: String, Identifiable, Hashable {
-        case grading, library, history
+        case grading, library, history, bookmarks
 
         var id: String {
             self.rawValue
@@ -16,6 +16,7 @@ struct StudioView: View {
     private let catalog = LUTCatalog.load()
     @State private var videoURL: URL?
     @State private var videoHasSecurityScope = false
+    @State private var videoSecurityScopeURL: URL?
     @State private var selectedDevice = ""
     @State private var selectedLUT = ""
     @State private var outputFolder: URL?
@@ -70,6 +71,7 @@ struct StudioView: View {
                 case .grading: workspaceGrading
                 case .library: LUTLibraryWorkspace()
                 case .history: ExportHistoryWorkspace()
+                case .bookmarks: SecurityBookmarkWorkspace { url in selectVideo(url) }
                 }
             }
         }
@@ -133,6 +135,10 @@ struct StudioView: View {
                     Label("Export History", systemImage: "clock.arrow.circlepath")
                         .tag(Optional(Workspace.history))
                 }
+                NavigationLink(value: Workspace.bookmarks) {
+                    Label("Security Bookmarks", systemImage: "folder.badge.gearshape")
+                        .tag(Optional(Workspace.bookmarks))
+                }
             }
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
@@ -160,33 +166,9 @@ struct StudioView: View {
         .background(DS.sidebarBg)
     }
 
-    @ViewBuilder
-    func workspaceHeader<Trailing: View>(title: String, subtitle: String, icon: String, @ViewBuilder trailing: () -> Trailing) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundStyle(.cyan)
-                .frame(width: 44, height: 44)
-                .background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                Text(subtitle)
-                    .font(.system(size: 12)).foregroundStyle(DS.textSecondary)
-            }
-            Spacer()
-            trailing()
-        }
-        .padding(.horizontal, 28)
-        .padding(.vertical, 20)
-        .overlay(alignment: .bottom) {
-            DS.divider.frame(height: 1)
-        }
-    }
-
     private var workspaceGrading: some View {
         VStack(spacing: 0) {
-            workspaceHeader(title: String(localized: "Color Grading"),
+            DS.workspaceHeader(title: String(localized: "Color Grading"),
                             subtitle: String(localized: "Bring your DJI footage to life."),
                             icon: "graph.2d") {
                 Spacer()
@@ -413,7 +395,7 @@ struct StudioView: View {
                     .frame(width: 44, height: 44)
                     .background(DS.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("AVFoundation · Core Image")
+                    Text("AVFoundation Core Image")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(DS.textPrimary)
                     Text("LUT grading, sharpening, encoding and audio export run natively on macOS.")
@@ -527,29 +509,37 @@ struct StudioView: View {
     }
     private func selectVideo(_ url: URL) {
         guard !isProcessing else { return }
-        guard url.startAccessingSecurityScopedResource() else {
+        let scopeURL: URL
+        if url.startAccessingSecurityScopedResource() {
+            scopeURL = url
+        } else if let bookmarkedDirectory = SecurityBookmarkStore.shared.startAccessingDirectory(containing: url) {
+            scopeURL = bookmarkedDirectory
+        } else {
             errorMessage = String(localized: "Access to the selected video was not granted. Choose it with Browse.")
             return
         }
-        if videoHasSecurityScope { videoURL?.stopAccessingSecurityScopedResource() }
+        if videoHasSecurityScope { videoSecurityScopeURL?.stopAccessingSecurityScopedResource() }
         videoURL = url
+        videoSecurityScopeURL = scopeURL
         videoHasSecurityScope = true
+        SecurityBookmarkStore.shared.addDirectory(url.deletingLastPathComponent())
         let name = url.deletingPathExtension().lastPathComponent.uppercased()
         if let match = catalog.devices.first(where: { device in (device.filenamePatterns ?? []).contains(where: { name.contains($0.uppercased()) }) }) {
             selectedDevice = match.id
             selectedLUT = match.luts.first(where: { $0.recommended == true })?.id ?? match.luts.first?.id ?? ""
             status = "Detected \(match.name) from filename"
-        } else { status = "Clip loaded · choose the matching camera profile" }
+        } else { status = "Clip loaded choose the matching camera profile" }
     }
 
     private func stopSecurityScopes() {
         if videoHasSecurityScope {
-            videoURL?.stopAccessingSecurityScopedResource()
+            videoSecurityScopeURL?.stopAccessingSecurityScopedResource()
         }
         if outputFolderHasSecurityScope {
             outputFolder?.stopAccessingSecurityScopedResource()
         }
         videoHasSecurityScope = false
+        videoSecurityScopeURL = nil
         outputFolderHasSecurityScope = false
     }
 
@@ -579,7 +569,7 @@ struct StudioView: View {
                     progress: { value in
                         let safeProgress = value.isFinite ? min(max(value, 0), 1) : 0
                         progress = safeProgress
-                        status = String(localized: "Color grading · \(Int(safeProgress * 100))%")
+                        status = String(localized: "Color grading \(Int(safeProgress * 100))%")
                     }
                 )
                 ExportHistoryStore.shared.record(
@@ -592,7 +582,7 @@ struct StudioView: View {
                     sharpen: sharpen)
                 isProcessing = false
                 progress = 1
-                status = String(localized: "Export complete · \(output.lastPathComponent)")
+                status = String(localized: "Export complete \(output.lastPathComponent)")
             } catch {
                 isProcessing = false
                 status = String(localized: "Export failed")

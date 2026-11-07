@@ -82,7 +82,7 @@ struct LUTLibraryWorkspace: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            workspaceHeader(title: "LUT Library", subtitle: "Browse and manage your color transforms.", icon: "square.stack.3d.up") {
+            DS.workspaceHeader(title: "LUT Library", subtitle: "Browse and manage your color transforms.", icon: "square.stack.3d.up") {
                 /*
                 Button { showImporter = true } label: { Label("Add LUTs", systemImage: "plus") }
                     .buttonStyle(.borderedProminent).tint(.cyan)
@@ -98,7 +98,7 @@ struct LUTLibraryWorkspace: View {
                             Image(systemName: "cube.transparent").foregroundStyle(.cyan).frame(width: 34, height: 34).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(file.deletingPathExtension().lastPathComponent).font(.system(size: 13, weight: .semibold))
-                                Text(file.deletingLastPathComponent().lastPathComponent + " · CUBE LUT").font(.system(size: 11))
+                                Text(file.deletingLastPathComponent().lastPathComponent + " CUBE LUT").font(.system(size: 11))
                                     .foregroundStyle(DS.textSecondary)
                             }
                             Spacer()
@@ -185,7 +185,7 @@ private struct LUTPreviewSheet: View {
                 Image(systemName: "cube.transparent").font(.system(size: 22)).foregroundStyle(.cyan)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(metadata?.title ?? url.deletingPathExtension().lastPathComponent).font(.system(size: 17, weight: .semibold))
-                    Text("CUBE · \(metadata?.format ?? "LUT")").font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(DS.textSecondary)
+                    Text("CUBE \(metadata?.format ?? "LUT")").font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(DS.textSecondary)
                 }
                 Spacer()
                 if isLoading { ProgressView().controlSize(.small) }
@@ -245,26 +245,3 @@ private struct LUTPreviewSheet: View {
     }
 }
 
-@ViewBuilder
-func workspaceHeader<Trailing: View>(title: String, subtitle: String, icon: String, @ViewBuilder trailing: () -> Trailing) -> some View {
-    HStack(spacing: 14) {
-        Image(systemName: icon)
-            .font(.system(size: 20))
-            .foregroundStyle(.cyan)
-            .frame(width: 44, height: 44)
-            .background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-            Text(subtitle)
-                .font(.system(size: 12)).foregroundStyle(DS.textSecondary)
-        }
-        Spacer()
-        trailing()
-    }
-    .padding(.horizontal, 28)
-    .padding(.vertical, 20)
-    .overlay(alignment: .bottom) {
-        DS.divider.frame(height: 1)
-    }
-}

@@ -143,7 +143,7 @@ struct ExportHistoryWorkspace: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            workspaceHeader(title: String(localized: "Export History"),
+            DS.workspaceHeader(title: String(localized: "Export History"),
                             subtitle: String(localized: "Review completed exports and clean up records."),
                             icon: "clock.arrow.circlepath") {
                 Spacer()
