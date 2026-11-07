@@ -1,5 +1,5 @@
 // Adapted from EoF MCP Studio's DesignComponents.swift
-// EoF Software Lab · 2026
+// EoF Software Lab 2026
 import SwiftUI
 internal import AppKit
 
@@ -61,10 +61,34 @@ public enum DS {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(DS.border, lineWidth: 1))
         }
     }
+    
+    @ViewBuilder
+    static public func workspaceHeader<Trailing: View>(title: String, subtitle: String, icon: String, @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundStyle(.cyan)
+                .frame(width: 44, height: 44)
+                .background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                Text(subtitle)
+                    .font(.system(size: 12)).foregroundStyle(DS.textSecondary)
+            }
+            Spacer()
+            trailing()
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 20)
+        .overlay(alignment: .bottom) {
+            DS.divider.frame(height: 1)
+        }
+    }
 }
 
 extension Font {
-    static func appSystemFont(size legacySize: CGFloat, weight: Font.Weight? = nil, design: Font.Design = .default) -> Font {
+    static func appFont(size legacySize: CGFloat, weight: Font.Weight? = nil, design: Font.Design = .default) -> Font {
         let relativeOffset = (max(legacySize, 10) - 13)
         return .system(size: NSFont.systemFontSize + relativeOffset + 1, weight: weight, design: design)
     }
