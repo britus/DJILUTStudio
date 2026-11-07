@@ -3,6 +3,24 @@ internal import AVFoundation
 internal import CoreImage
 internal import CoreGraphics
 
+enum CodecType: String, CaseIterable, Identifiable {
+    case h264
+    case hevc
+    case proRes422
+    case proRes422HQ
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .h264: "H.264"
+        case .hevc: "HEVC H.265"
+        case .proRes422: "ProRes 422"
+        case .proRes422HQ: "ProRes 422 HQ"
+        }
+    }
+}
+
 enum NativeVideoExporter {
     enum ExportError: LocalizedError {
         case missingVideoTrack
@@ -26,10 +44,10 @@ enum NativeVideoExporter {
     static func export(
         videoURL: URL,
         lutURL: URL,
+        lookLUTURL: URL,
         outputFolder: URL,
-        codec: String,
+        codec: CodecType,
         sharpen: Bool,
-        look: String,
         progress: @MainActor @Sendable @escaping (Double) -> Void
     ) async throws -> URL {
         let asset = AVURLAsset(url: videoURL)
@@ -39,41 +57,14 @@ enum NativeVideoExporter {
         }
 
         let lut = try loadCube(at: lutURL)
+        let lookLUT = try loadCube(at: lookLUTURL)
         let videoComposition = try await AVVideoComposition.videoComposition(with: asset, applyingCIFiltersWithHandler: { request in
-            var image = request.sourceImage
-
-            let range = lut.domainMaximum - lut.domainMinimum
-            guard let domainTransform = CIFilter(name: "CIColorMatrix") else {
+            guard let convertedImage = applyCube(lut, to: request.sourceImage),
+                  let gradedImage = applyCube(lookLUT, to: convertedImage) else {
                 request.finish(with: ExportError.filterFailed)
                 return
             }
-            domainTransform.setValue(image, forKey: kCIInputImageKey)
-            domainTransform.setValue(CIVector(x: CGFloat(1 / range.x), y: 0, z: 0, w: 0), forKey: "inputRVector")
-            domainTransform.setValue(CIVector(x: 0, y: CGFloat(1 / range.y), z: 0, w: 0), forKey: "inputGVector")
-            domainTransform.setValue(CIVector(x: 0, y: 0, z: CGFloat(1 / range.z), w: 0), forKey: "inputBVector")
-            domainTransform.setValue(CIVector(x: CGFloat(-lut.domainMinimum.x / range.x), y: CGFloat(-lut.domainMinimum.y / range.y), z: CGFloat(-lut.domainMinimum.z / range.z), w: 0), forKey: "inputBiasVector")
-            guard let domainAdjustedImage = domainTransform.outputImage else {
-                request.finish(with: ExportError.filterFailed)
-                return
-            }
-            image = domainAdjustedImage
-
-            guard let cubeFilter = CIFilter(name: "CIColorCubeWithColorSpace"),
-                  let lutColorSpace = CGColorSpace(name: CGColorSpace.itur_709) else {
-                request.finish(with: ExportError.filterFailed)
-                return
-            }
-            cubeFilter.setValue(image, forKey: kCIInputImageKey)
-            cubeFilter.setValue(lut.dimension, forKey: "inputCubeDimension")
-            cubeFilter.setValue(lut.data, forKey: "inputCubeData")
-            cubeFilter.setValue(lutColorSpace, forKey: "inputColorSpace")
-            guard let cubeOutput = cubeFilter.outputImage else {
-                request.finish(with: ExportError.filterFailed)
-                return
-            }
-            image = cubeOutput
-
-            image = applyLook(look, to: image)
+            var image = gradedImage
             if sharpen, let filter = CIFilter(name: "CIUnsharpMask") {
                 filter.setValue(image, forKey: kCIInputImageKey)
                 filter.setValue(2.0, forKey: kCIInputRadiusKey)
@@ -84,7 +75,7 @@ enum NativeVideoExporter {
             request.finish(with: image.cropped(to: request.sourceImage.extent), context: nil)
         })
 
-        if codec == "ProRes HQ" {
+        if codec == .proRes422HQ {
             let audioTracks = try await asset.loadTracks(withMediaType: .audio)
             let duration = try await asset.load(.duration)
             let outputURL = uniqueOutputURL(in: outputFolder, baseName: videoURL.deletingPathExtension().lastPathComponent, extension: "mov")
@@ -107,7 +98,7 @@ enum NativeVideoExporter {
             throw ExportError.unsupportedPreset
         }
 
-        let fileType: AVFileType = codec == "ProRes" || codec == "ProRes HQ" ? .mov : .mp4
+        let fileType: AVFileType = codec == .proRes422 || codec == .proRes422HQ ? .mov : .mp4
         let fileExtension = fileType == .mov ? "mov" : "mp4"
         let outputURL = uniqueOutputURL(in: outputFolder, baseName: videoURL.deletingPathExtension().lastPathComponent, extension: fileExtension)
         session.videoComposition = videoComposition
@@ -132,12 +123,11 @@ enum NativeVideoExporter {
         }
     }
 
-    private static func presetName(for codec: String) -> String {
+    private static func presetName(for codec: CodecType) -> String {
         switch codec {
-        case "H.264": AVAssetExportPresetHighestQuality
-        case "ProRes": AVAssetExportPresetAppleProRes422LPCM
-        case "ProRes HQ": AVAssetExportPresetAppleProRes422LPCM
-        default: AVAssetExportPresetHEVCHighestQuality
+        case .h264: AVAssetExportPresetHighestQuality
+        case .proRes422, .proRes422HQ: AVAssetExportPresetAppleProRes422LPCM
+        case .hevc: AVAssetExportPresetHEVCHighestQuality
         }
     }
 
@@ -157,6 +147,25 @@ enum NativeVideoExporter {
         var data: Data
         var domainMinimum: SIMD3<Float>
         var domainMaximum: SIMD3<Float>
+    }
+
+    private static func applyCube(_ cube: Cube, to image: CIImage) -> CIImage? {
+        let range = cube.domainMaximum - cube.domainMinimum
+        guard range.x > 0, range.y > 0, range.z > 0,
+              let domainTransform = CIFilter(name: "CIColorMatrix") else { return nil }
+        domainTransform.setValue(image, forKey: kCIInputImageKey)
+        domainTransform.setValue(CIVector(x: CGFloat(1 / range.x), y: 0, z: 0, w: 0), forKey: "inputRVector")
+        domainTransform.setValue(CIVector(x: 0, y: CGFloat(1 / range.y), z: 0, w: 0), forKey: "inputGVector")
+        domainTransform.setValue(CIVector(x: 0, y: 0, z: CGFloat(1 / range.z), w: 0), forKey: "inputBVector")
+        domainTransform.setValue(CIVector(x: CGFloat(-cube.domainMinimum.x / range.x), y: CGFloat(-cube.domainMinimum.y / range.y), z: CGFloat(-cube.domainMinimum.z / range.z), w: 0), forKey: "inputBiasVector")
+        guard let adjustedImage = domainTransform.outputImage,
+              let cubeFilter = CIFilter(name: "CIColorCubeWithColorSpace"),
+              let lutColorSpace = CGColorSpace(name: CGColorSpace.itur_709) else { return nil }
+        cubeFilter.setValue(adjustedImage, forKey: kCIInputImageKey)
+        cubeFilter.setValue(cube.dimension, forKey: "inputCubeDimension")
+        cubeFilter.setValue(cube.data, forKey: "inputCubeData")
+        cubeFilter.setValue(lutColorSpace, forKey: "inputColorSpace")
+        return cubeFilter.outputImage
     }
 
     private static func loadCube(at url: URL) throws -> Cube {
@@ -255,36 +264,6 @@ enum NativeVideoExporter {
         return advance(advance(advance(c000, c001, b), c011, g), c111, r)
     }
 
-    private static func applyLook(_ look: String, to image: CIImage) -> CIImage {
-        let saturation: CGFloat
-        let contrast: CGFloat
-        let brightness: CGFloat
-        var bias = CIVector(x: 0, y: 0, z: 0, w: 0)
-
-        switch look {
-        case "Vibrant Pop": saturation = 1.18; contrast = 1.04; brightness = 0
-        case "Cinematic Film": saturation = 0.88; contrast = 1.07; brightness = -0.015
-        case "Golden Hour":
-            saturation = 1; contrast = 1; brightness = 0
-            bias = CIVector(x: 0.06, y: 0.015, z: -0.035, w: 0)
-        case "Teal & Orange":
-            saturation = 1; contrast = 1; brightness = 0
-            bias = CIVector(x: 0.04, y: -0.015, z: 0.04, w: 0)
-        case "Moody Noir B&W": saturation = 0; contrast = 1.18; brightness = -0.025
-        default: saturation = 1; contrast = 1; brightness = 0
-        }
-
-        guard let controls = CIFilter(name: "CIColorControls") else { return image }
-        controls.setValue(image, forKey: kCIInputImageKey)
-        controls.setValue(saturation, forKey: kCIInputSaturationKey)
-        controls.setValue(contrast, forKey: kCIInputContrastKey)
-        controls.setValue(brightness, forKey: kCIInputBrightnessKey)
-        guard let controlledImage = controls.outputImage else { return image }
-        guard bias != CIVector(x: 0, y: 0, z: 0, w: 0), let matrix = CIFilter(name: "CIColorMatrix") else { return controlledImage }
-        matrix.setValue(controlledImage, forKey: kCIInputImageKey)
-        matrix.setValue(bias, forKey: "inputBiasVector")
-        return matrix.outputImage ?? controlledImage
-    }
 }
 
 private final class ProResHQPipeline: @unchecked Sendable {

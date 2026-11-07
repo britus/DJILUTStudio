@@ -1,9 +1,27 @@
 import Foundation
 
 struct LUTCatalog: Decodable {
+    var version: String?
+    var name: String?
+    var description: String?
     var categories: [LUTCategory]
-    var devices: [LUTDevice] { categories.flatMap(\.devices) }
-    var allLUTs: [LUTProfile] { devices.flatMap(\.luts) }
+
+    var deviceCategories: [LUTCategory] {
+        categories.filter { $0.id != "cinematic_looks" }
+    }
+
+    var devices: [LUTDevice] {
+        deviceCategories.flatMap(\.devices)
+    }
+
+    var allLUTs: [LUTProfile] {
+        devices.flatMap(\.luts)
+    }
+
+    var lookProfiles: [LUTProfile] {
+        categories.first(where: { $0.id == "cinematic_looks" })?.devices
+            .first(where: { $0.id == "creative_looks" })?.luts ?? []
+    }
 
     static func load() -> LUTCatalog {
         guard let url = Bundle.main.url(forResource: "lut_manifest", withExtension: "json"),
@@ -27,7 +45,12 @@ struct LUTDevice: Decodable, Identifiable, Hashable {
     var defaultProfile: String?
     var filenamePatterns: [String]?
     var luts: [LUTProfile]
-    enum CodingKeys: String, CodingKey { case id, name, luts; case defaultProfile = "default_profile"; case filenamePatterns = "filename_patterns" }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, luts
+        case defaultProfile = "default_profile"
+        case filenamePatterns = "filename_patterns"
+    }
 }
 
 struct LUTProfile: Decodable, Identifiable, Hashable {
@@ -37,4 +60,12 @@ struct LUTProfile: Decodable, Identifiable, Hashable {
     var file: String
     var recommended: Bool?
     var description: String?
+
+    func fileURL(in libraryDirectory: URL) -> URL {
+        libraryDirectory.appending(path: file)
+    }
+
+    func isAvailable(in libraryDirectory: URL) -> Bool {
+        FileManager.default.fileExists(atPath: fileURL(in: libraryDirectory).path)
+    }
 }
