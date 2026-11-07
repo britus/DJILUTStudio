@@ -83,8 +83,11 @@ struct LUTLibraryWorkspace: View {
     var body: some View {
         VStack(spacing: 0) {
             workspaceHeader(title: "LUT Library", subtitle: "Browse and manage your color transforms.", icon: "square.stack.3d.up") {
+                /*
                 Button { showImporter = true } label: { Label("Add LUTs", systemImage: "plus") }
                     .buttonStyle(.borderedProminent).tint(.cyan)
+                */
+                Spacer()
             }
             if library.files.isEmpty {
                 ContentUnavailableView("No LUT files", systemImage: "cube.transparent", description: Text("Add .cube LUT files to your library."))
@@ -95,14 +98,28 @@ struct LUTLibraryWorkspace: View {
                             Image(systemName: "cube.transparent").foregroundStyle(.cyan).frame(width: 34, height: 34).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(file.deletingPathExtension().lastPathComponent).font(.system(size: 13, weight: .semibold))
-                                Text(file.deletingLastPathComponent().lastPathComponent + " · CUBE LUT").font(.system(size: 11)).foregroundStyle(DS.textSecondary)
+                                Text(file.deletingLastPathComponent().lastPathComponent + " · CUBE LUT").font(.system(size: 11))
+                                    .foregroundStyle(DS.textSecondary)
                             }
                             Spacer()
-                            Button { selectedFile = file } label: { Image(systemName: "eye") }.buttonStyle(.plain).help("Preview LUT file")
-                            Button(role: .destructive) { library.delete(file); selectedFile = nil } label: { Image(systemName: "trash") }.buttonStyle(.plain).help("Delete LUT")
+                            Button {
+                                selectedFile = file
+                            } label: {
+                                Image(systemName: "eye")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Preview LUT file")
+                            /*
+                            Button(role: .destructive) {
+                                library.delete(file); selectedFile = nil } label: { Image(systemName: "trash")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Delete LUT")
+                            */
                         }.padding(.vertical, 5)
                     }
-                }.listStyle(.inset)
+                }
+                .listStyle(.bordered)
             }
         }
         .background(DS.chatBg)

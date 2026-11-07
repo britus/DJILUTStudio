@@ -3,7 +3,14 @@ internal import AppKit
 internal import UniformTypeIdentifiers
 
 struct StudioView: View {
-    private enum Workspace: Hashable { case grading, library, history }
+    private enum Workspace: String, Identifiable, Hashable {
+        case grading, library, history
+
+        var id: String {
+            self.rawValue
+        }
+    }
+
     private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
 
     private let catalog = LUTCatalog.load()
@@ -19,7 +26,7 @@ struct StudioView: View {
     @State private var progress = 0.0
     @State private var showOutputPicker = false
     @State private var errorMessage: String?
-    @State private var workspace: Workspace = .grading
+    @State private var workspace: Workspace? = .grading
 
     @AppStorage("studio.fineDetailSharpening") private var sharpen = false
     @AppStorage("studio.selectedLook") private var selectedLook = "vibrant_pop_v1"
@@ -40,8 +47,8 @@ struct StudioView: View {
 
     private var selectedLookProfile: LUTProfile? {
         availableLooks.first(where: { $0.id == selectedLook })
-            ?? availableLooks.first(where: { $0.recommended == true })
-            ?? availableLooks.first
+        ?? availableLooks.first(where: { $0.recommended == true })
+        ?? availableLooks.first
     }
 
     private var lutURL: URL? {
@@ -59,7 +66,7 @@ struct StudioView: View {
         }
         detail: {
             Group {
-                switch workspace {
+                switch workspace ?? .grading {
                 case .grading: workspaceGrading
                 case .library: LUTLibraryWorkspace()
                 case .history: ExportHistoryWorkspace()
@@ -86,8 +93,16 @@ struct StudioView: View {
         }
     }
 
+    private func applicationVersion() -> String {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String
+    }
+
+    private func applicationBuild() -> String {
+        return Bundle.main.infoDictionary?["CFBundleVersion"] as! String
+    }
+
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 11) {
                 Image(systemName: "camera.aperture")
                     .font(.system(size: 21, weight: .semibold))
@@ -103,25 +118,44 @@ struct StudioView: View {
                         .foregroundStyle(DS.textSecondary)
                 }
             }
-            VStack(alignment: .leading, spacing: 8) {
-                sectionLabel("WORKSPACE")
-                sidebarItem("Color Grading", icon: "slider.horizontal.3", selected: workspace == .grading) { workspace = .grading }
-                sidebarItem("LUT Library", icon: "square.stack.3d.up", selected: workspace == .library) { workspace = .library }
-                sidebarItem("Export History", icon: "clock.arrow.circlepath", selected: workspace == .history) { workspace = .history }
+            .padding(.horizontal, 12)
+
+            List(selection: $workspace) {
+                NavigationLink(value: Workspace.grading) {
+                    Label("Color Grading", systemImage: "slider.horizontal.3")
+                        .tag(Optional(Workspace.grading))
+                }
+                NavigationLink(value: Workspace.library) {
+                    Label("LUT Library", systemImage: "square.stack.3d.up")
+                        .tag(Optional(Workspace.library))
+                }
+                NavigationLink(value: Workspace.history) {
+                    Label("Export History", systemImage: "clock.arrow.circlepath")
+                        .tag(Optional(Workspace.history))
+                }
             }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .tint(.cyan)
+            .frame(maxHeight: .infinity)
+
             Spacer()
-            VStack(alignment: .leading, spacing: 10) {
+
+            VStack(alignment: .leading, spacing: 12) {
                 sectionLabel("SYSTEM")
-                Label("Native Export", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(DS.green)
-                Label("Apple Silicon Metal", systemImage: "cpu")
-                    .foregroundStyle(DS.green)
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Native Export", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(DS.green)
+                    Label("Apple Silicon Metal", systemImage: "cpu")
+                        .foregroundStyle(DS.green)
+                    Label("App Version \(applicationVersion()).\(applicationBuild())", systemImage: "app")
+                        .foregroundStyle(DS.green)
+                }
+                .font(.system(size: 11, weight: .medium))
             }
-            .font(.system(size: 11, weight: .medium))
-            Text("DJI LUT Studio macOS").font(.system(size: 11))
-                .foregroundStyle(DS.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 24)
         }
-        .padding(20)
         .frame(width: 224)
         .background(DS.sidebarBg)
     }
@@ -400,20 +434,6 @@ struct StudioView: View {
         Text(text)
             .font(.system(size: 11, weight: .bold)).tracking(1.1)
             .foregroundStyle(DS.textSecondary).padding(.leading, 8)
-    }
-
-    private func sidebarItem(_ title: String, icon: String, selected: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .frame(width: 16); Text(title); Spacer()
-            }
-            .font(.system(size: 12, weight: selected ? .semibold : .regular))
-            .foregroundStyle(selected ? DS.textPrimary : DS.textSecondary)
-            .padding(.horizontal, 10).frame(height: 34)
-            .background(selected ? DS.accentDim : .clear, in: RoundedRectangle(cornerRadius: 7))
-        }
-        .buttonStyle(.plain)
     }
 
     private func setDefaults() {
