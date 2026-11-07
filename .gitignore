@@ -5,6 +5,7 @@
 Packaging/
 syncrepo.sh
 .devid
+/Deploy/
 /xcode/
 **/xcshareddata/
 !MCPStudio.xcodeproj/xcshareddata/
