@@ -82,7 +82,9 @@ struct LUTLibraryWorkspace: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            DS.workspaceHeader(title: "LUT Library", subtitle: "Browse and manage your color transforms.", icon: "square.stack.3d.up") {
+            DS.workspaceHeader(title: "LUT Library",
+                               subtitle: "Browse available color transforms.",
+                               icon: "square.stack.3d.up") {
                 /*
                 Button { showImporter = true } label: { Label("Add LUTs", systemImage: "plus") }
                     .buttonStyle(.borderedProminent).tint(.cyan)
