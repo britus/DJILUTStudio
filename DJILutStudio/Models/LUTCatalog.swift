@@ -1,6 +1,6 @@
 import Foundation
 
-struct LUTCatalog: Decodable {
+struct LUTCatalog: Codable {
     var version: String?
     var name: String?
     var description: String?
@@ -23,8 +23,8 @@ struct LUTCatalog: Decodable {
             .first(where: { $0.id == "creative_looks" })?.luts ?? []
     }
 
-    static func load() -> LUTCatalog {
-        guard let url = Bundle.main.url(forResource: "lut_manifest", withExtension: "json"),
+    static func load(from url: URL? = nil) -> LUTCatalog {
+        guard let url = url ?? Bundle.main.url(forResource: "lut_manifest", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let catalog = try? JSONDecoder().decode(LUTCatalog.self, from: data) else {
             return LUTCatalog(categories: [])
@@ -33,13 +33,13 @@ struct LUTCatalog: Decodable {
     }
 }
 
-struct LUTCategory: Decodable, Identifiable {
+struct LUTCategory: Codable, Identifiable {
     var id: String
     var name: String
     var devices: [LUTDevice]
 }
 
-struct LUTDevice: Decodable, Identifiable, Hashable {
+struct LUTDevice: Codable, Identifiable, Hashable {
     var id: String
     var name: String
     var defaultProfile: String?
@@ -53,16 +53,24 @@ struct LUTDevice: Decodable, Identifiable, Hashable {
     }
 }
 
-struct LUTProfile: Decodable, Identifiable, Hashable {
+struct LUTProfile: Codable, Identifiable, Hashable {
     var id: String
     var name: String
     var type: String?
     var file: String
     var recommended: Bool?
     var description: String?
+    var sourceBookmark: Data?
 
     func fileURL(in libraryDirectory: URL) -> URL {
-        libraryDirectory.appending(path: file)
+        if let sourceBookmark {
+            var isStale = false
+            if let resolved = try? URL(resolvingBookmarkData: sourceBookmark, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &isStale) {
+                return resolved
+            }
+        }
+        if file.hasPrefix("/") { return URL(fileURLWithPath: file) }
+        return libraryDirectory.appending(path: file)
     }
 
     func isAvailable(in libraryDirectory: URL) -> Bool {

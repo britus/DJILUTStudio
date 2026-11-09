@@ -13,7 +13,9 @@ struct StudioView: View {
 
     private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
 
-    private let catalog = LUTCatalog.load()
+    @ObservedObject private var library = LUTLibraryStore.shared
+    private var catalog: LUTCatalog { library.catalog }
+    private static let noCreativeLook = "__no_creative_look__"
     @State private var videoURL: URL?
     @State private var videoHasSecurityScope = false
     @State private var videoSecurityScopeURL: URL?
@@ -27,6 +29,7 @@ struct StudioView: View {
     @State private var progress = 0.0
     @State private var showOutputPicker = false
     @State private var errorMessage: String?
+    @State private var lastExportURL: URL?
     @State private var workspace: Workspace? = .grading
 
     @AppStorage("studio.fineDetailSharpening") private var sharpen = false
@@ -47,7 +50,8 @@ struct StudioView: View {
     }
 
     private var selectedLookProfile: LUTProfile? {
-        availableLooks.first(where: { $0.id == selectedLook })
+        guard selectedLook != Self.noCreativeLook else { return nil }
+        return availableLooks.first(where: { $0.id == selectedLook })
         ?? availableLooks.first(where: { $0.recommended == true })
         ?? availableLooks.first
     }
@@ -169,8 +173,8 @@ struct StudioView: View {
     private var workspaceGrading: some View {
         VStack(spacing: 0) {
             DS.workspaceHeader(title: String(localized: "Color Grading"),
-                            subtitle: String(localized: "Bring your DJI footage to life."),
-                            icon: "graph.2d") {
+                               subtitle: String(localized: "Bring your DJI footage to life."),
+                               icon: "graph.2d") {
                 Spacer()
                 HStack(spacing: 8) {
                     Circle().fill(DS.green).frame(width: 7, height: 7)
@@ -194,26 +198,55 @@ struct StudioView: View {
                     exportCard
                     nativeExportCard
                     HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(status).font(.system(size: 11, weight: .medium))
-                            if isProcessing { ProgressView(value: progress).tint(.cyan).frame(width: 240) }
+                        if let url = lastExportURL, !isProcessing {
+                            Button(action: {
+                                NSWorkspace.shared.open(url)
+                            }) {
+                                HStack(spacing: 9) {
+                                    Image(systemName: "play.rectangle")
+                                    Text("View Video")
+                                }
+                                .font(.system(size: 12, weight: .bold))
+                                .tracking(0.4)
+                                .foregroundStyle(Color.black.opacity(0.9))
+                                .padding(.horizontal, 20)
+                                .frame(height: 44)
+                                .background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            VStack(alignment: .leading, spacing: 5) {
+                                if isProcessing {
+                                    Text(status).font(.system(size: 11, weight: .medium))
+                                    ProgressView(value: progress).tint(.cyan).frame(width: 240)
+                                }
+                            }
                         }
                         Spacer()
-                        Button(action: startExport) {
-                            HStack(spacing: 9) {
-                                if isProcessing {
-                                    ProgressView().controlSize(.small)
-                                } else {
-                                    Image(systemName: "sparkles") }; Text(isProcessing ? "GRADING…" : "APPLY LUT & EXPORT")
+                        HStack(spacing: 12) {
+                            Button(action: startExport) {
+                                HStack(spacing: 9) {
+                                    if isProcessing {
+                                        ProgressView().controlSize(.small)
+                                    } else {
+                                        Image(systemName: "sparkles")
+                                    }
+                                    Text(isProcessing ? "GRADING..." : "APPLY LUT & EXPORT")
+                                }
+                                .font(.system(size: 12, weight: .bold))
+                                .tracking(0.4)
+                                .foregroundStyle(Color.black.opacity(0.9))
+                                .padding(.horizontal, 20)
+                                .frame(height: 44)
+                                .background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
                             }
-                            .font(.system(size: 12, weight: .bold))
-                            .tracking(0.4)
-                            .foregroundStyle(Color.black.opacity(0.9))
-                            .padding(.horizontal, 20)
-                            .frame(height: 44)
-                            .background(LinearGradient(colors: [.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 9))
-                        }.buttonStyle(.plain).disabled(videoURL == nil || outputFolder == nil || isProcessing)
+                            .buttonStyle(.plain)
+                            .disabled(videoURL == nil || outputFolder == nil || isProcessing)
+                        }
                     }.padding(.top, 2)
+                    if !isProcessing {
+                        Text(status).font(.system(size: 11, weight: .medium))
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(24)
@@ -307,6 +340,7 @@ struct StudioView: View {
                 LabeledContent("LOOK") {
                     Spacer()
                     Picker("Look", selection: $selectedLook) {
+                        Text("No Creative Grade Look").tag(Self.noCreativeLook)
                         ForEach(availableLooks) { look in
                             Text(look.name).tag(look.id)
                         }
@@ -421,6 +455,7 @@ struct StudioView: View {
     private func setDefaults() {
         selectedDevice = catalog.devices.first(where: { $0.id == "o4" })?.id ?? catalog.devices.first?.id ?? ""
         selectedLUT = activeDevice?.luts.first(where: { $0.recommended == true })?.id ?? activeDevice?.luts.first?.id ?? ""
+        if selectedLook == Self.noCreativeLook { return }
         if !availableLooks.contains(where: { $0.id == selectedLook }) {
             selectedLook = availableLooks.first(where: { $0.recommended == true })?.id ?? availableLooks.first?.id ?? ""
         }
@@ -544,7 +579,7 @@ struct StudioView: View {
     }
 
     private func startExport() {
-        guard let videoURL, let lutURL, let lookLUTURL else {
+        guard let videoURL, let lutURL else {
             errorMessage = String(localized: "The selected LUT resource could not be found.")
             return
         }
@@ -559,10 +594,17 @@ struct StudioView: View {
         status = String(localized: "Preparing native video export…")
         Task { @MainActor in
             do {
+                let selectedLookURL = lookLUTURL
+                let conversionHasScope = lutURL.startAccessingSecurityScopedResource()
+                let lookHasScope = selectedLookURL?.startAccessingSecurityScopedResource() ?? false
+                defer {
+                    if conversionHasScope { lutURL.stopAccessingSecurityScopedResource() }
+                    if lookHasScope, let selectedLookURL { selectedLookURL.stopAccessingSecurityScopedResource() }
+                }
                 let output = try await NativeVideoExporter.export(
                     videoURL: videoURL,
                     lutURL: lutURL,
-                    lookLUTURL: lookLUTURL,
+                    lookLUTURL: selectedLookURL,
                     outputFolder: outputFolder,
                     codec: codec,
                     sharpen: sharpen,
@@ -581,6 +623,7 @@ struct StudioView: View {
                     look: selectedLookProfile?.name ?? selectedLook,
                     sharpen: sharpen)
                 isProcessing = false
+                lastExportURL = output
                 progress = 1
                 status = String(localized: "Export complete \(output.lastPathComponent)")
             } catch {

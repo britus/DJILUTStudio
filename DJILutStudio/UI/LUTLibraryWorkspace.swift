@@ -5,17 +5,25 @@ internal import UniformTypeIdentifiers
 final class LUTLibraryStore: ObservableObject {
     static let shared = LUTLibraryStore()
     @Published private(set) var files: [URL] = []
+    @Published private(set) var catalog = LUTCatalog(categories: [])
     let rootURL: URL
+    let manifestURL: URL
 
     private init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         rootURL = support.appendingPathComponent("DJILUTStudio/LUTLibrary", isDirectory: true)
+        manifestURL = support.appendingPathComponent("DJILUTStudio/lut_manifest.json")
         refresh()
     }
 
     func prepare() {
         do {
             try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: manifestURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: manifestURL.path),
+               let bundledManifest = Bundle.main.url(forResource: "lut_manifest", withExtension: "json") {
+                try FileManager.default.copyItem(at: bundledManifest, to: manifestURL)
+            }
             if let bundled = Bundle.main.resourceURL?.appendingPathComponent("lut_library"),
                let enumerator = FileManager.default.enumerator(at: bundled, includingPropertiesForKeys: nil) {
                 for case let source as URL in enumerator where source.pathExtension.lowercased() == "cube" {
@@ -43,8 +51,53 @@ final class LUTLibraryStore: ObservableObject {
     }
 
     func refresh() {
-        let enumerator = FileManager.default.enumerator(at: rootURL, includingPropertiesForKeys: [.isRegularFileKey])
-        files = (enumerator?.allObjects as? [URL] ?? []).filter { $0.pathExtension.lowercased() == "cube" }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        catalog = LUTCatalog.load(from: manifestURL)
+        files = Array(Set((catalog.allLUTs + catalog.lookProfiles)
+            .map { $0.fileURL(in: rootURL) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }))
+        .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+    }
+
+    func add(source: URL, name: String, details: String, category: LUTEntryCategory, storage: LUTStorageChoice, deviceName: String) throws {
+        let didAccess = source.startAccessingSecurityScopedResource()
+        defer { if didAccess { source.stopAccessingSecurityScopedResource() } }
+        var profileFile: String
+        var sourceBookmark: Data?
+        if storage == .copy {
+            let folder = category == .cinematicLooks ? "custom_looks" : "custom_conversion"
+            let destination = uniqueDestination(for: source.lastPathComponent, subdirectory: folder)
+            try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: destination)
+            profileFile = String(destination.path.dropFirst(rootURL.path.count + 1))
+        } else {
+            profileFile = source.path
+            sourceBookmark = try source.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+        }
+
+        let profile = LUTProfile(id: "user_\(UUID().uuidString.lowercased())", name: name, type: category == .cinematicLooks ? "creative" : "technical", file: profileFile, recommended: false, description: details.isEmpty ? nil : details, sourceBookmark: sourceBookmark)
+        var updated = catalog
+        if category == .cinematicLooks {
+            if let categoryIndex = updated.categories.firstIndex(where: { $0.id == "cinematic_looks" }),
+               let deviceIndex = updated.categories[categoryIndex].devices.firstIndex(where: { $0.id == "creative_looks" }) {
+                updated.categories[categoryIndex].devices[deviceIndex].luts.append(profile)
+            }
+        } else {
+            let categoryID = "user_added_devices"
+            let deviceID = "user_" + deviceName.lowercased().replacingOccurrences(of: " ", with: "_")
+            if let categoryIndex = updated.categories.firstIndex(where: { $0.id == categoryID }) {
+                if let deviceIndex = updated.categories[categoryIndex].devices.firstIndex(where: { $0.id == deviceID }) {
+                    updated.categories[categoryIndex].devices[deviceIndex].luts.append(profile)
+                } else {
+                    updated.categories[categoryIndex].devices.append(LUTDevice(id: deviceID, name: deviceName, defaultProfile: nil, filenamePatterns: nil, luts: [profile]))
+                }
+            } else {
+                updated.categories.append(LUTCategory(id: categoryID, name: "User Added Devices", devices: [LUTDevice(id: deviceID, name: deviceName, defaultProfile: nil, filenamePatterns: nil, luts: [profile])]))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(updated).write(to: manifestURL, options: .atomic)
+        refresh()
     }
 
     func add(_ urls: [URL]) {
@@ -64,20 +117,24 @@ final class LUTLibraryStore: ObservableObject {
         catch { NSLog("Could not delete LUT: %@", error.localizedDescription) }
     }
 
-    private func uniqueDestination(for name: String) -> URL {
-        var destination = rootURL.appendingPathComponent(name)
+    private func uniqueDestination(for name: String, subdirectory: String = "") -> URL {
+        let directory = subdirectory.isEmpty ? rootURL : rootURL.appendingPathComponent(subdirectory, isDirectory: true)
+        var destination = directory.appendingPathComponent(name)
         var suffix = 2
         while FileManager.default.fileExists(atPath: destination.path) {
-            destination = rootURL.appendingPathComponent("\(URL(fileURLWithPath: name).deletingPathExtension().lastPathComponent) \(suffix).cube")
+            destination = directory.appendingPathComponent("\(URL(fileURLWithPath: name).deletingPathExtension().lastPathComponent) \(suffix).cube")
             suffix += 1
         }
         return destination
     }
 }
 
+enum LUTEntryCategory: String, CaseIterable, Identifiable { case conversion, cinematicLooks; var id: Self { self } }
+enum LUTStorageChoice: String, CaseIterable, Identifiable { case copy, reference; var id: Self { self } }
+
 struct LUTLibraryWorkspace: View {
     @ObservedObject private var library = LUTLibraryStore.shared
-    @State private var showImporter = false
+    @State private var showAddSheet = false
     @State private var selectedFile: URL?
 
     var body: some View {
@@ -85,18 +142,16 @@ struct LUTLibraryWorkspace: View {
             DS.workspaceHeader(title: "LUT Library",
                                subtitle: "Browse available color transforms.",
                                icon: "square.stack.3d.up") {
-                /*
-                Button { showImporter = true } label: { Label("Add LUTs", systemImage: "plus") }
-                    .buttonStyle(.borderedProminent).tint(.cyan)
-                */
                 Spacer()
+                Button { showAddSheet = true } label: { Label("Add LUT's", systemImage: "plus") }
+                    .buttonStyle(.borderedProminent).tint(.cyan)
             }
             if library.files.isEmpty {
                 ContentUnavailableView("No LUT files", systemImage: "cube.transparent", description: Text("Add .cube LUT files to your library."))
             } else {
                 List(selection: $selectedFile) {
                     ForEach(library.files, id: \.path) { file in
-                        HStack(spacing: 12) {
+                        HStack(alignment: .top, spacing: 12) {
                             Image(systemName: "cube.transparent").foregroundStyle(.cyan).frame(width: 34, height: 34).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(file.deletingPathExtension().lastPathComponent).font(.system(size: 13, weight: .semibold))
@@ -112,12 +167,12 @@ struct LUTLibraryWorkspace: View {
                             .buttonStyle(.plain)
                             .help("Preview LUT file")
                             /*
-                            Button(role: .destructive) {
-                                library.delete(file); selectedFile = nil } label: { Image(systemName: "trash")
-                            }
-                            .buttonStyle(.plain)
-                            .help("Delete LUT")
-                            */
+                             Button(role: .destructive) {
+                             library.delete(file); selectedFile = nil } label: { Image(systemName: "trash")
+                             }
+                             .buttonStyle(.plain)
+                             .help("Delete LUT")
+                             */
                         }.padding(.vertical, 5)
                     }
                 }
@@ -125,12 +180,127 @@ struct LUTLibraryWorkspace: View {
             }
         }
         .background(DS.chatBg)
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [UTType(filenameExtension: "cube") ?? .data], allowsMultipleSelection: true) { result in
-            if case .success(let urls) = result { library.add(urls) }
-        }
+        .sheet(isPresented: $showAddSheet) { LUTEntrySheet { source, name, details, category, storage, deviceName in
+            try library.add(source: source, name: name, details: details, category: category, storage: storage, deviceName: deviceName)
+        } }
         .sheet(item: Binding(get: { selectedFile.map(LUTFileSelection.init(url:)) }, set: { selectedFile = $0?.url })) { selection in
             LUTPreviewSheet(url: selection.url)
         }
+    }
+}
+
+private struct LUTEntrySheet: View {
+    let saveEntry: (URL, String, String, LUTEntryCategory, LUTStorageChoice, String) throws -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var category: LUTEntryCategory = .conversion
+    @State private var storage: LUTStorageChoice = .copy
+    @State private var name = ""
+    @State private var details = ""
+    @State private var deviceName = ""
+    @State private var sourceURL: URL?
+    @State private var showImporter = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            DS.workspaceHeader(title: String(localized: "Add LUT to Library"),
+                               subtitle: String(localized: "Add a conversion LUT or a cinematic look."),
+                               icon: "cube.transparent") {
+                EmptyView()
+            }
+
+            VStack(alignment: .leading, spacing: 14) {
+                DS.Card(icon: "square.grid.2x2", title: String(localized: "LUT CATEGORY"), accent: .cyan) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Picker("Category", selection: $category) {
+                                Text("Device / Conversion").tag(LUTEntryCategory.conversion)
+                                Text("Cinematic Looks").tag(LUTEntryCategory.cinematicLooks)
+                            }
+                            .pickerStyle(.radioGroup)
+                            .labelsHidden()
+                        }
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+
+                DS.Card(icon: "text.alignleft", title: String(localized: "LUT DETAILS"), accent: .purple) {
+                    HStack {
+                        VStack(spacing: 12) {
+                            if category == .conversion {
+                                TextField("Device / Camera name", text: $deviceName)
+                            }
+                            TextField("LUT name", text: $name)
+                            TextField("Description (optional)", text: $details)
+                        }
+                        Spacer()
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity)
+                }
+
+                DS.Card(icon: "externaldrive", title: String(localized: "FILE STORAGE"), accent: .orange) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Picker("Store LUT", selection: $storage) {
+                                Text("Copy to Application Support").tag(LUTStorageChoice.copy)
+                                Text("Link to original file").tag(LUTStorageChoice.reference)
+                            }
+                            .pickerStyle(.radioGroup)
+                            .labelsHidden()
+                        }
+                        Spacer()
+                        Button {
+                            showImporter = true
+                        }
+                        label: {
+                            Label(sourceURL?.lastPathComponent ?? "Choose .cube file…",
+                                  systemImage: "doc.badge.plus")
+                            .lineLimit(1).truncationMode(.middle)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+
+                if let errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DS.red).font(.caption)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            VStack {
+                Divider()
+                HStack(alignment: .center, spacing: 12) {
+                    Spacer()
+                    Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                    Button("Add LUT") { save() }
+                        .buttonStyle(.borderedProminent).tint(.cyan).keyboardShortcut(.defaultAction)
+                        .disabled(sourceURL == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (category == .conversion && deviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                }
+                .padding(24)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 12)
+        .frame(width: 560, height: 620)
+        .background(DS.chatBg)
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: [UTType(filenameExtension: "cube") ?? .data], allowsMultipleSelection: false) { result in
+            if case .success(let urls) = result { sourceURL = urls.first; if name.isEmpty { name = urls.first?.deletingPathExtension().lastPathComponent ?? "" } }
+        }
+    }
+
+    private func save() {
+        guard let sourceURL else { return }
+        do {
+            try saveEntry(sourceURL, name.trimmingCharacters(in: .whitespacesAndNewlines), details.trimmingCharacters(in: .whitespacesAndNewlines), category, storage, deviceName.trimmingCharacters(in: .whitespacesAndNewlines))
+            dismiss()
+        } catch { errorMessage = error.localizedDescription }
     }
 }
 
@@ -224,11 +394,13 @@ private struct LUTPreviewSheet: View {
             isLoading = true
             metadata = nil
             error = nil
+            let didAccess = url.startAccessingSecurityScopedResource()
             do {
                 metadata = try await Task.detached(priority: .userInitiated) { try LUTCubeMetadata.read(from: url) }.value
             } catch {
                 self.error = error.localizedDescription
             }
+            if didAccess { url.stopAccessingSecurityScopedResource() }
             isLoading = false
         }
     }
@@ -244,6 +416,7 @@ private struct LUTPreviewSheet: View {
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(DS.textSecondary)
+
     }
 }
 

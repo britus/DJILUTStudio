@@ -28,7 +28,8 @@
 ## UI conventions
 
 - Reuse the existing `DS.*` colors, cards, fields, and buttons.
-- New dialogs and wizards should follow the existing `DS.Card` style.
+- Every sheet and dialog must use the shared `DS.*` design components and follow the existing `DS.Card` UI pattern.
+- New wizards should follow the existing `DS.Card` style.
 - Use `String(localized:)` for user-visible text.
 - Prefer SF Symbols over new bitmap icons.
 - Keep macOS light and dark appearances working.

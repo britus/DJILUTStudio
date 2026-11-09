@@ -44,7 +44,7 @@ enum NativeVideoExporter {
     static func export(
         videoURL: URL,
         lutURL: URL,
-        lookLUTURL: URL,
+        lookLUTURL: URL?,
         outputFolder: URL,
         codec: CodecType,
         sharpen: Bool,
@@ -57,14 +57,20 @@ enum NativeVideoExporter {
         }
 
         let lut = try loadCube(at: lutURL)
-        let lookLUT = try loadCube(at: lookLUTURL)
+        let lookLUT = try lookLUTURL.map(loadCube(at:))
         let videoComposition = try await AVVideoComposition.videoComposition(with: asset, applyingCIFiltersWithHandler: { request in
-            guard let convertedImage = applyCube(lut, to: request.sourceImage),
-                  let gradedImage = applyCube(lookLUT, to: convertedImage) else {
+            guard let convertedImage = applyCube(lut, to: request.sourceImage) else {
                 request.finish(with: ExportError.filterFailed)
                 return
             }
-            var image = gradedImage
+            var image = convertedImage
+            if let lookLUT {
+                guard let gradedImage = applyCube(lookLUT, to: image) else {
+                    request.finish(with: ExportError.filterFailed)
+                    return
+                }
+                image = gradedImage
+            }
             if sharpen, let filter = CIFilter(name: "CIUnsharpMask") {
                 filter.setValue(image, forKey: kCIInputImageKey)
                 filter.setValue(2.0, forKey: kCIInputRadiusKey)
