@@ -18,6 +18,8 @@
 		C20000000000000000000003 /* SecurityBookmarkWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000003 /* SecurityBookmarkWorkspace.swift */; };
 		F718FAA1309D49700092AF52 /* NativeVideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */; };
 		F7CF151A30956B1200C6BAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F7CF151930956B1200C6BAF2 /* Assets.xcassets */; };
+		D20000000000000000000001 /* QuickActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* QuickActionViewController.swift */; };
+		D20000000000000000000002 /* QuickAction.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D30000000000000000000003 /* QuickAction.appex */; settings = { ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,10 @@
 		F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeVideoExporter.swift; sourceTree = "<group>"; };
 		F7CF151830956A3300C6BAF2 /* DJILutStudio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DJILutStudio.entitlements; sourceTree = "<group>"; };
 		F7CF151930956B1200C6BAF2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D30000000000000000000001 /* QuickActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionViewController.swift; sourceTree = "<group>"; };
+		D30000000000000000000002 /* QuickAction-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D30000000000000000000003 /* QuickAction.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = QuickAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D30000000000000000000004 /* App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +69,8 @@
 				D10000000000000000000004 /* UI */,
 				D10000000000000000000006 /* Models */,
 				D10000000000000000000007 /* Resources */,
+				D30000000000000000000004 /* App-Info.plist */,
+				D10000000000000000000008 /* QuickAction */,
 			);
 			path = DJILutStudio;
 			sourceTree = "<group>";
@@ -71,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000007 /* DJILutStudio.app */,
+				D30000000000000000000003 /* QuickAction.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -106,6 +115,15 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		D10000000000000000000008 /* QuickAction */ = {
+			isa = PBXGroup;
+			children = (
+				D30000000000000000000001 /* QuickActionViewController.swift */,
+				D30000000000000000000002 /* QuickAction-Info.plist */,
+			);
+			path = QuickAction;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -116,15 +134,31 @@
 				G10000000000000000000001 /* Sources */,
 				C10000000000000000000001 /* Frameworks */,
 				H10000000000000000000001 /* Resources */,
+				D40000000000000000000002 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D50000000000000000000001 /* PBXTargetDependency */,
 			);
 			name = DJILutStudio;
 			productName = DJILutStudio;
 			productReference = B10000000000000000000007 /* DJILutStudio.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D60000000000000000000001 /* QuickAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D70000000000000000000001 /* Build configuration list for PBXNativeTarget "QuickAction" */;
+			buildPhases = (
+				D40000000000000000000001 /* QuickAction Sources */,
+				D40000000000000000000003 /* QuickAction Frameworks */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = QuickAction;
+			productName = QuickAction;
+			productReference = D30000000000000000000003 /* QuickAction.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -149,7 +183,17 @@
 			projectRoot = "";
 			targets = (
 				E10000000000000000000001 /* DJILutStudio */,
+				D60000000000000000000001 /* QuickAction */,
 			);
+		};
+		D40000000000000000000001 /* QuickAction Sources */ = {
+			isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D20000000000000000000001 /* QuickActionViewController.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000002 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (D20000000000000000000002 /* QuickAction.appex in Embed App Extensions */,); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000003 /* QuickAction Frameworks */ = {
+			isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXProject section */
 
@@ -210,11 +254,9 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "DJI LUT Studio";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow DJI LUT Studio to access your movies and videos in your photo library in order to perform color grading.";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DJILutStudio/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.eof.video.DJILutStudio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -257,11 +299,9 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "DJI LUT Studio";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow DJI LUT Studio to access your movies and videos in your photo library in order to perform color grading.";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DJILutStudio/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.eof.video.DJILutStudio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -282,7 +322,7 @@
 		I10000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
 			};
@@ -291,8 +331,46 @@
 		I10000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D80000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 83NQU389JN;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DJILutStudio/QuickAction/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = org.eof.video.DJILutStudio.QuickAction;
+				PRODUCT_NAME = QuickAction;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		D80000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 83NQU389JN;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DJILutStudio/QuickAction/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_BUNDLE_IDENTIFIER = org.eof.video.DJILutStudio.QuickAction;
+				PRODUCT_NAME = QuickAction;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
@@ -317,6 +395,25 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		D70000000000000000000001 /* Build configuration list for PBXNativeTarget "QuickAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (D80000000000000000000001 /* Debug */, D80000000000000000000002 /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D50000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D60000000000000000000001 /* QuickAction */;
+			name = QuickAction;
+			targetProxy = D90000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		D90000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E10000000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D60000000000000000000001;
+			remoteInfo = QuickAction;
 		};
 /* End XCConfigurationList section */
 	};

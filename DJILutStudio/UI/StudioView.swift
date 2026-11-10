@@ -3,6 +3,7 @@ internal import AppKit
 internal import UniformTypeIdentifiers
 
 struct StudioView: View {
+    @Binding var openedVideoURL: URL?
     private enum Workspace: String, Identifiable, Hashable {
         case grading, library, history, bookmarks
 
@@ -92,6 +93,11 @@ struct StudioView: View {
             Text(errorMessage ?? "Unbekannter Fehler")
         }
         .onAppear(perform: restoreSettings)
+        .onChange(of: openedVideoURL) { _, url in
+            guard let url else { return }
+            selectVideo(url)
+            openedVideoURL = nil
+        }
         .onDisappear {
             if !isProcessing {
                 stopSecurityScopes()
