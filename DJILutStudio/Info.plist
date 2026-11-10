@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright (c) 2026 EoF Software Lab</string>
 	<key>CFBundleDisplayName</key>
 	<string>DJI LUT Studio</string>
 	<key>CFBundleDocumentTypes</key>
