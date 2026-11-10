@@ -1,6 +1,6 @@
 # DJI LUT Studio for macOS
 
-Native macOS SwiftUI application for the DJI LUT Studio workflow. The project targets macOS 26 and Swift 6. The App is inspired by the [GitHub Project DJI LUT Studio V2](https://github.com/gal756/DJI-LUT-Studio-V2). Thank you @gal756 👍
+Native macOS SwiftUI application for the DJI LUT Studio workflow. The project targets macOS 26 and Swift 6. The app is inspired by the [GitHub project DJI LUT Studio V2](https://github.com/gal756/DJI-LUT-Studio-V2). Many thanks, @gal756 👍
 
 ## Build
 
