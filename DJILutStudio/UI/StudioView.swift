@@ -23,6 +23,7 @@ struct StudioView: View {
     @State private var status = "Bereit für deinen nächsten Clip"
     @State private var progress = 0.0
     @State private var showOutputPicker = false
+    @State private var showUserGuide = false
     @State private var errorMessage: String?
     @State private var lastExportURL: URL?
 
@@ -77,6 +78,9 @@ struct StudioView: View {
         .background(DS.chatBg)
         .preferredColorScheme(.dark)
         .fileImporter(isPresented: $showOutputPicker, allowedContentTypes: [.folder], allowsMultipleSelection: false, onCompletion: chooseOutput)
+        .sheet(isPresented: $showUserGuide) {
+            UserGuideSheet()
+        }
         .navigationSplitViewStyle(.balanced)
         .navigationTransition(.automatic)
         .navigationLinkIndicatorVisibility(.hidden)
@@ -94,8 +98,8 @@ struct StudioView: View {
                     presentVideoPicker()
                 }
                 .padding(.leading, 8) // Tahoe required
-                DS.ToolbarButton(icon: "info.circle", help: String(localized: "About")) {
-                    workspace = .about
+                DS.ToolbarButton(icon: "questionmark.circle", help: String(localized: "User Guide")) {
+                    showUserGuide = true
                 }
                 .padding(.trailing, 8) // Tahoe required
             }
