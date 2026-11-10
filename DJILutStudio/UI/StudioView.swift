@@ -4,13 +4,7 @@ internal import UniformTypeIdentifiers
 
 struct StudioView: View {
     @Binding var openedVideoURL: URL?
-    private enum Workspace: String, Identifiable, Hashable {
-        case grading, library, history, bookmarks
-
-        var id: String {
-            self.rawValue
-        }
-    }
+    @Binding var workspace: StudioWorkspace?
 
     private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
 
@@ -31,7 +25,6 @@ struct StudioView: View {
     @State private var showOutputPicker = false
     @State private var errorMessage: String?
     @State private var lastExportURL: URL?
-    @State private var workspace: Workspace? = .grading
 
     @AppStorage("studio.fineDetailSharpening") private var sharpen = false
     @AppStorage("studio.selectedLook") private var selectedLook = "vibrant_pop_v1"
@@ -77,6 +70,7 @@ struct StudioView: View {
                 case .library: LUTLibraryWorkspace()
                 case .history: ExportHistoryWorkspace()
                 case .bookmarks: SecurityBookmarkWorkspace { url in selectVideo(url) }
+                case .about: aboutWorkspace
                 }
             }
         }
@@ -87,8 +81,32 @@ struct StudioView: View {
         .navigationTransition(.automatic)
         .navigationLinkIndicatorVisibility(.hidden)
         .presentationPreventsAppTermination(false)
-        .alert("Export fehlgeschlagen", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
-            Button("OK", role: .cancel) { errorMessage = nil }
+        .toolbar {
+            ToolbarItemGroup(placement: .navigation) {
+                Spacer()
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                Spacer()
+                DS.ToolbarButton(icon: "arrow.down.document", help: String(localized: "Video")) {
+                    if workspace != .grading {
+                        workspace = .grading
+                    }
+                    presentVideoPicker()
+                }
+                .padding(.leading, 8) // Tahoe required
+                DS.ToolbarButton(icon: "info.circle", help: String(localized: "About")) {
+                    workspace = .about
+                }
+                .padding(.trailing, 8) // Tahoe required
+            }
+        }
+        .alert("Export fehlgeschlagen", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {
+                errorMessage = nil
+            }
         } message: {
             Text(errorMessage ?? "Unbekannter Fehler")
         }
@@ -106,11 +124,11 @@ struct StudioView: View {
     }
 
     private func applicationVersion() -> String {
-        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 
     private func applicationBuild() -> String {
-        return Bundle.main.infoDictionary?["CFBundleVersion"] as! String
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 
     private var sidebar: some View {
@@ -133,21 +151,25 @@ struct StudioView: View {
             .padding(.horizontal, 12)
 
             List(selection: $workspace) {
-                NavigationLink(value: Workspace.grading) {
+                NavigationLink(value: StudioWorkspace.grading) {
                     Label("Color Grading", systemImage: "slider.horizontal.3")
-                        .tag(Optional(Workspace.grading))
+                        .tag(Optional(StudioWorkspace.grading))
                 }
-                NavigationLink(value: Workspace.library) {
+                NavigationLink(value: StudioWorkspace.library) {
                     Label("LUT Library", systemImage: "square.stack.3d.up")
-                        .tag(Optional(Workspace.library))
+                        .tag(Optional(StudioWorkspace.library))
                 }
-                NavigationLink(value: Workspace.history) {
+                NavigationLink(value: StudioWorkspace.history) {
                     Label("Export History", systemImage: "clock.arrow.circlepath")
-                        .tag(Optional(Workspace.history))
+                        .tag(Optional(StudioWorkspace.history))
                 }
-                NavigationLink(value: Workspace.bookmarks) {
+                NavigationLink(value: StudioWorkspace.bookmarks) {
                     Label("Security Bookmarks", systemImage: "folder.badge.gearshape")
-                        .tag(Optional(Workspace.bookmarks))
+                        .tag(Optional(StudioWorkspace.bookmarks))
+                }
+                NavigationLink(value: StudioWorkspace.about) {
+                    Label(String(localized: "About"), systemImage: "info.circle")
+                        .tag(Optional(StudioWorkspace.about))
                 }
             }
             .listStyle(.sidebar)
@@ -260,6 +282,72 @@ struct StudioView: View {
         }
     }
 
+    private var aboutWorkspace: some View {
+        VStack(spacing: 0) {
+            DS.workspaceHeader(
+                title: String(localized: "About DJI LUT Studio"),
+                subtitle: String(localized: "Application information and acknowledgements."),
+                icon: "info.circle"
+            ) {
+                EmptyView()
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    DS.Card(icon: "camera.aperture", title: String(localized: "DJI LUT STUDIO"), accent: .cyan) {
+                        HStack{
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(String(localized: "Version \(applicationVersion()).\(applicationBuild())"))
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(DS.textPrimary)
+
+                                Text(String(localized: "© 2026 EoF Software Lab"))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(DS.textSecondary)
+
+                                Text(String(localized: "Original project © 2026 DJI LUT Studio Contributors, created by gal756."))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(DS.textSecondary)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    DS.Card(icon: "heart", title: String(localized: "ACKNOWLEDGEMENTS"), accent: .cyan) {
+                        HStack{
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(String(localized: "With thanks to gal756 for the inspiration behind the original DJI LUT Studio project."))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(DS.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+
+                    DS.Card(icon: "link", title: String(localized: "ORIGINAL PROJECT"), accent: .cyan) {
+                        HStack{
+                            VStack(alignment: .leading, spacing: 12) {
+                                if let originalProjectURL = URL(string: "https://github.com/gal756/DJI-LUT-Studio-V2") {
+                                    Link(destination: originalProjectURL) {
+                                        Label(String(localized: "View the original project on GitHub"), systemImage: "arrow.up.right.square")
+                                            .font(.system(size: 12, weight: .medium))
+                                    }
+                                }
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+            }
+        }
+    }
+
     // MARK: - SOURCE FOOTAGE
     private var videoCard: some View {
         DS.Card(icon: "film", title: "SOURCE FOOTAGE", accent: .cyan) {
@@ -276,9 +364,20 @@ struct StudioView: View {
                             Text(videoURL?.path ?? "MOV, MP4 or M4V camera profile suggested from filename").font(.system(size: 11)).foregroundStyle(DS.textSecondary).lineLimit(1).truncationMode(.middle)
                         }
                         Spacer()
-                        Text(videoURL == nil ? "BROWSE" : "CHANGE").font(.system(size: 11, weight: .bold)).tracking(0.5).foregroundStyle(.cyan).padding(.horizontal, 12).padding(.vertical, 8).background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-                    }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(DS.codeBg.opacity(0.45), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(DS.border.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: videoURL == nil ? [5, 4] : [])))
-                }.buttonStyle(.plain).disabled(isProcessing)
+                        Text(videoURL == nil ? "BROWSE" : "CHANGE")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(0.5).foregroundStyle(.cyan)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(DS.codeBg.opacity(0.45), in: RoundedRectangle(cornerRadius: 9))
+                    .overlay(RoundedRectangle(cornerRadius: 9)
+                        .strokeBorder(DS.border.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: videoURL == nil ? [5, 4] : [])))
+                }
+                .buttonStyle(.plain).disabled(isProcessing)
             }
             .contentShape(Rectangle())
             .onDrop(of: [.fileURL], isTargeted: nil) { providers in

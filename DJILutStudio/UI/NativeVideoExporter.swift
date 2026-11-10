@@ -368,19 +368,20 @@ private final class ProResHQPipeline: @unchecked Sendable {
     private func transferAllSamples(
         progress: @MainActor @Sendable @escaping (Double) -> Void
     ) async throws {
-        let streams: [(AVAssetReaderOutput, AVAssetWriterInput)] = [(videoOutput, videoInput)] + audioStreams.map { ($0.0, $0.1) }
+        let streams = [MediaStream(output: videoOutput, input: videoInput)]
+            + audioStreams.map { MediaStream(output: $0.0, input: $0.1) }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let completion = StreamCompletion(count: streams.count, continuation: continuation)
-            for (output, input) in streams {
+            for stream in streams {
                 let queue = DispatchQueue(label: "DJILutStudio.ProResHQ.\(UUID().uuidString)")
-                input.requestMediaDataWhenReady(on: queue) {
-                    while input.isReadyForMoreMediaData {
-                        guard let sample = output.copyNextSampleBuffer() else {
-                            input.markAsFinished()
+                stream.input.requestMediaDataWhenReady(on: queue) {
+                    while stream.input.isReadyForMoreMediaData {
+                        guard let sample = stream.output.copyNextSampleBuffer() else {
+                            stream.input.markAsFinished()
                             completion.finishOne()
                             return
                         }
-                        guard input.append(sample) else {
+                        guard stream.input.append(sample) else {
                             let error = self.writer.error ?? NativeVideoExporter.ExportError.writerFailed
                             self.reader.cancelReading()
                             self.writer.cancelWriting()
@@ -398,6 +399,12 @@ private final class ProResHQPipeline: @unchecked Sendable {
             }
         }
     }
+}
+
+/// Each reader/writer pair is accessed only from its dedicated serial media queue.
+private struct MediaStream: @unchecked Sendable {
+    let output: AVAssetReaderOutput
+    let input: AVAssetWriterInput
 }
 
 private final class StreamCompletion: @unchecked Sendable {

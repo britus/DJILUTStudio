@@ -85,6 +85,42 @@ public enum DS {
             DS.divider.frame(height: 1)
         }
     }
+    
+    @ViewBuilder
+    static public func ToolbarButton(
+        icon: String,
+        help: String,
+        disabled: Bool = false,
+        foregroundColor: Color? = nil,
+        size: CGFloat = 12,
+        fill: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Group {
+                ZStack {
+                    if fill {
+                        Circle().fill(DS.buttonBg)
+                            .frame(width: size * 2, height: size * 2)
+                    }
+                    if let foregroundColor {
+                        Image(systemName: icon)
+                            .font(.system(size: size, weight: .medium))
+                            .frame(width: size * 2 + 2, height: size * 2 + 2)
+                            .foregroundColor(foregroundColor)
+                    } else {
+                        Image(systemName: icon)
+                            .font(.system(size: size, weight: .medium))
+                            .frame(width: size * 2 + 2, height: size * 2 + 2)
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .transition(.opacity)
+        .disabled(disabled)
+        .help(help)
+    }
 }
 
 extension Font {
