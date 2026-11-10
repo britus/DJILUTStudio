@@ -36,8 +36,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.video</string>
+	<string>public.app-category.productivity</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow DJI LUT Studio to access your movies and videos in your photo library in order to perform color grading.</string>
 </dict>
