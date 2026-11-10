@@ -19,6 +19,7 @@
 		D20000000000000000000001 /* QuickActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* QuickActionViewController.swift */; };
 		D20000000000000000000002 /* QuickAction.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D30000000000000000000003 /* QuickAction.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F718FAA1309D49700092AF52 /* NativeVideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */; };
+		F75D8E4E30A2EDD30009A876 /* UserGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75D8E4D30A2EDD30009A876 /* UserGuideSheet.swift */; };
 		F7CF151A30956B1200C6BAF2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F7CF151930956B1200C6BAF2 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +63,7 @@
 		D30000000000000000000003 /* QuickAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D30000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F718FAA0309D49700092AF52 /* NativeVideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeVideoExporter.swift; sourceTree = "<group>"; };
+		F75D8E4D30A2EDD30009A876 /* UserGuideSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGuideSheet.swift; sourceTree = "<group>"; };
 		F7CF151830956A3300C6BAF2 /* DJILutStudio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DJILutStudio.entitlements; sourceTree = "<group>"; };
 		F7CF151930956B1200C6BAF2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -118,6 +120,7 @@
 		D10000000000000000000004 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				F75D8E4D30A2EDD30009A876 /* UserGuideSheet.swift */,
 				C30000000000000000000001 /* LUTLibraryWorkspace.swift */,
 				C30000000000000000000002 /* ExportHistoryWorkspace.swift */,
 				C30000000000000000000003 /* SecurityBookmarkWorkspace.swift */,
@@ -248,6 +251,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000001 /* DJILutStudioApp.swift in Sources */,
+				F75D8E4E30A2EDD30009A876 /* UserGuideSheet.swift in Sources */,
 				A10000000000000000000002 /* StudioView.swift in Sources */,
 				F718FAA1309D49700092AF52 /* NativeVideoExporter.swift in Sources */,
 				C20000000000000000000001 /* LUTLibraryWorkspace.swift in Sources */,

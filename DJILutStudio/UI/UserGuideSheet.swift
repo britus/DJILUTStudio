@@ -72,11 +72,11 @@ struct UserGuideSheet: View {
         _ title: String,
         icon: String,
         accent: Color,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        DS.Card(icon: icon, title: String(localized: String.LocalizationValue(title)), accent: accent) {
+        DS.Card(icon: icon, title: title, accent: accent) {
             content()
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundStyle(DS.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
