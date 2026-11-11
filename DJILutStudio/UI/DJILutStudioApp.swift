@@ -53,7 +53,7 @@ struct MenuHelpCommands: Commands {
     @Binding var workspace: StudioWorkspace?
 
     var body: some Commands {
-        CommandGroup(after: .help) {
+        CommandGroup(replacing: .help) {
             Divider()
             Button(String(localized: "About")) {
                 workspace = .about
