@@ -255,7 +255,7 @@ private struct LUTEntrySheet: View {
                             showImporter = true
                         }
                         label: {
-                            Label(sourceURL?.lastPathComponent ?? "Choose .cube file…",
+                            Label(sourceURL?.lastPathComponent ?? String(localized: "Choose .cube file..."),
                                   systemImage: "doc.badge.plus")
                             .lineLimit(1).truncationMode(.middle)
                         }
@@ -280,7 +280,9 @@ private struct LUTEntrySheet: View {
                     Spacer()
                     Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                     Button("Add LUT") { save() }
-                        .buttonStyle(.borderedProminent).tint(.cyan).keyboardShortcut(.defaultAction)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.cyan)
+                        .keyboardShortcut(.defaultAction)
                         .disabled(sourceURL == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (category == .conversion && deviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
                 }
                 .padding(24)
@@ -291,7 +293,12 @@ private struct LUTEntrySheet: View {
         .frame(width: 560, height: 620)
         .background(DS.chatBg)
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [UTType(filenameExtension: "cube") ?? .data], allowsMultipleSelection: false) { result in
-            if case .success(let urls) = result { sourceURL = urls.first; if name.isEmpty { name = urls.first?.deletingPathExtension().lastPathComponent ?? "" } }
+            if case .success(let urls) = result {
+                sourceURL = urls.first
+                if name.isEmpty {
+                    name = urls.first?.deletingPathExtension().lastPathComponent ?? ""
+                }
+            }
         }
     }
 
@@ -300,7 +307,9 @@ private struct LUTEntrySheet: View {
         do {
             try saveEntry(sourceURL, name.trimmingCharacters(in: .whitespacesAndNewlines), details.trimmingCharacters(in: .whitespacesAndNewlines), category, storage, deviceName.trimmingCharacters(in: .whitespacesAndNewlines))
             dismiss()
-        } catch { errorMessage = error.localizedDescription }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 
@@ -341,7 +350,13 @@ private struct LUTCubeMetadata: Sendable {
             }
         }
 
-        return LUTCubeMetadata(title: title, dimension: dimension, oneDimensionalSize: oneDimensionalSize, domainMinimum: domainMinimum, domainMaximum: domainMaximum, colorEntries: colorEntries, format: dimension == nil ? "1D LUT" : "3D LUT")
+        return LUTCubeMetadata(title: title,
+                               dimension: dimension,
+                               oneDimensionalSize: oneDimensionalSize,
+                               domainMinimum: domainMinimum,
+                               domainMaximum: domainMaximum,
+                               colorEntries: colorEntries,
+                               format: dimension == nil ? "1D LUT" : "3D LUT")
     }
 }
 
@@ -354,20 +369,30 @@ private struct LUTPreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
-                Image(systemName: "cube.transparent").font(.system(size: 22)).foregroundStyle(.cyan)
+                Image(systemName: "cube.transparent")
+                    .font(.system(size: 22)).foregroundStyle(.cyan)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(metadata?.title ?? url.deletingPathExtension().lastPathComponent).font(.system(size: 17, weight: .semibold))
-                    Text("CUBE \(metadata?.format ?? "LUT")").font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(DS.textSecondary)
+                    Text(metadata?.title ?? url.deletingPathExtension().lastPathComponent)
+                        .font(.system(size: 17, weight: .semibold))
+                    Text("CUBE \(metadata?.format ?? "LUT")")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(DS.textSecondary)
                 }
                 Spacer()
-                if isLoading { ProgressView().controlSize(.small) }
+                if isLoading {
+                    ProgressView().controlSize(.small)
+                }
             }
 
             if let metadata {
                 Form {
                     metadataRow("Format", metadata.format)
-                    if let dimension = metadata.dimension { metadataRow("3D LUT size", "\(dimension) × \(dimension) × \(dimension)") }
-                    if let size = metadata.oneDimensionalSize { metadataRow("1D LUT size", "\(size) entries") }
+                    if let dimension = metadata.dimension {
+                        metadataRow("3D LUT size", "\(dimension) × \(dimension) × \(dimension)")
+                    }
+                    if let size = metadata.oneDimensionalSize {
+                        metadataRow("1D LUT size", "\(size) entries")
+                    }
                     metadataRow("Domain minimum", metadata.domainMinimum)
                     metadataRow("Domain maximum", metadata.domainMaximum)
                     metadataRow("Color entries", metadata.colorEntries.formatted())
@@ -379,12 +404,16 @@ private struct LUTPreviewSheet: View {
             } else if let error {
                 ContentUnavailableView("Unable to read LUT", systemImage: "exclamationmark.triangle", description: Text(error))
             } else if isLoading {
-                ProgressView("Please wait, reading LUT metadata.").frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView("Please wait, reading LUT metadata.")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             HStack {
                 Spacer()
-                Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Close") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
             }
         }
         .padding(24)
@@ -396,11 +425,15 @@ private struct LUTPreviewSheet: View {
             error = nil
             let didAccess = url.startAccessingSecurityScopedResource()
             do {
-                metadata = try await Task.detached(priority: .userInitiated) { try LUTCubeMetadata.read(from: url) }.value
+                metadata = try await Task.detached(priority: .userInitiated) {
+                    try LUTCubeMetadata.read(from: url)
+                }.value
             } catch {
                 self.error = error.localizedDescription
             }
-            if didAccess { url.stopAccessingSecurityScopedResource() }
+            if didAccess {
+                url.stopAccessingSecurityScopedResource()
+            }
             isLoading = false
         }
     }

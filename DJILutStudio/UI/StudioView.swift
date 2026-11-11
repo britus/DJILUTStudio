@@ -20,7 +20,7 @@ struct StudioView: View {
     @State private var outputFolderHasSecurityScope = false
     @State private var codec: CodecType = .hevc
     @State private var isProcessing = false
-    @State private var status = "Bereit für deinen nächsten Clip"
+    @State private var status = String(localized: "Ready for your next clip")
     @State private var progress = 0.0
     @State private var showOutputPicker = false
     @State private var showUserGuide = false
@@ -104,7 +104,7 @@ struct StudioView: View {
                 .padding(.trailing, 8) // Tahoe required
             }
         }
-        .alert("Export fehlgeschlagen", isPresented: Binding(
+        .alert(String(localized: "Export failed"), isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
@@ -112,7 +112,7 @@ struct StudioView: View {
                 errorMessage = nil
             }
         } message: {
-            Text(errorMessage ?? "Unbekannter Fehler")
+            Text(errorMessage ?? String(localized: "Unknown error"))
         }
         .onAppear(perform: restoreSettings)
         .onChange(of: openedVideoURL) { _, url in
@@ -305,7 +305,7 @@ struct StudioView: View {
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(DS.textPrimary)
 
-                                Text(String(localized: "© 2026 EoF Software Lab"))
+                                Text(String(localized: "Copyright 2026 by EoF Software Lab"))
                                     .font(.system(size: 12))
                                     .foregroundStyle(DS.textSecondary)
 
@@ -362,10 +362,20 @@ struct StudioView: View {
                 }
                 label: {
                     HStack(spacing: 16) {
-                        Image(systemName: videoURL == nil ? "plus.square.dashed" : "film.fill").font(.system(size: 25)).foregroundStyle(.cyan).frame(width: 58, height: 58).background(.cyan.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
+                        Image(systemName: videoURL == nil ? "plus.square.dashed" : "film.fill")
+                            .font(.system(size: 25))
+                            .foregroundStyle(.cyan)
+                            .frame(width: 58, height: 58)
+                            .background(.cyan.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(videoURL?.lastPathComponent ?? "Drop a clip or browse files").font(.system(size: 13, weight: .semibold)).foregroundStyle(DS.textPrimary)
-                            Text(videoURL?.path ?? "MOV, MP4 or M4V camera profile suggested from filename").font(.system(size: 11)).foregroundStyle(DS.textSecondary).lineLimit(1).truncationMode(.middle)
+                            Text(videoURL?.lastPathComponent ?? "Drop a clip or browse files")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(DS.textPrimary)
+                            Text(videoURL?.path ?? "MOV, MP4 or M4V camera profile suggested from filename")
+                                .font(.system(size: 11))
+                                .foregroundStyle(DS.textSecondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
                         }
                         Spacer()
                         Text(videoURL == nil ? "BROWSE" : "CHANGE")
@@ -662,7 +672,9 @@ struct StudioView: View {
             errorMessage = String(localized: "Access to the selected video was not granted. Choose it with Browse.")
             return
         }
-        if videoHasSecurityScope { videoSecurityScopeURL?.stopAccessingSecurityScopedResource() }
+        if videoHasSecurityScope {
+            videoSecurityScopeURL?.stopAccessingSecurityScopedResource()
+        }
         videoURL = url
         videoSecurityScopeURL = scopeURL
         videoHasSecurityScope = true
@@ -671,8 +683,10 @@ struct StudioView: View {
         if let match = catalog.devices.first(where: { device in (device.filenamePatterns ?? []).contains(where: { name.contains($0.uppercased()) }) }) {
             selectedDevice = match.id
             selectedLUT = match.luts.first(where: { $0.recommended == true })?.id ?? match.luts.first?.id ?? ""
-            status = "Detected \(match.name) from filename"
-        } else { status = "Clip loaded choose the matching camera profile" }
+            status = String(localized: "Detected \(match.name) from filename")
+        } else {
+            status = String(localized: "Clip loaded choose the matching camera profile")
+        }
     }
 
     private func stopSecurityScopes() {
@@ -700,7 +714,7 @@ struct StudioView: View {
 
         isProcessing = true
         progress = 0
-        status = String(localized: "Preparing native video export…")
+        status = String(localized: "Preparing native video export...")
         Task { @MainActor in
             do {
                 let selectedLookURL = lookLUTURL
