@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct UserGuideSheet: View {
+    @Binding var showUserGuide: Bool
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -19,9 +21,12 @@ struct UserGuideSheet: View {
                         .foregroundStyle(DS.textSecondary)
                 }
                 Spacer()
-                Button(String(localized: "Done")) { dismiss() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.cyan)
+                Button(String(localized: "Done")) {
+                    showUserGuide.toggle()
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.cyan)
             }
             .padding(22)
             .overlay(alignment: .bottom) { DS.divider.frame(height: 1) }

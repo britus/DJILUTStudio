@@ -51,9 +51,14 @@ struct MenuViewCommands: Commands {
 
 struct MenuHelpCommands: Commands {
     @Binding var workspace: StudioWorkspace?
+    @Binding var showUserGuide: Bool
 
     var body: some Commands {
         CommandGroup(replacing: .help) {
+            Divider()
+            Button(String(localized: "User guide")) {
+                showUserGuide = true
+            }
             Divider()
             Button(String(localized: "About")) {
                 workspace = .about
@@ -67,6 +72,8 @@ struct DJILutStudioApp: App {
     @State private var openedVideoURL: URL?
     @State private var workspace: StudioWorkspace? = .grading
 
+    @AppStorage("studio.showUserGuide") private var showUserGuide = true
+
     init() {
         NSWindow.allowsAutomaticWindowTabbing = false
         LUTLibraryStore.shared.prepare()
@@ -75,7 +82,7 @@ struct DJILutStudioApp: App {
 
     var body: some Scene {
         WindowGroup {
-            StudioView(openedVideoURL: $openedVideoURL, workspace: $workspace)
+            StudioView(openedVideoURL: $openedVideoURL, workspace: $workspace, showUserGuide: $showUserGuide)
                 .frame(minWidth: 1024, minHeight: 810)
                 .onOpenURL { url in
                     guard url.isFileURL else { return }
@@ -84,11 +91,10 @@ struct DJILutStudioApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .commands {
-            //SidebarCommands()
             MenuFileCommands(workspace: $workspace)
             MenuEditCommands(workspace: $workspace)
             MenuViewCommands(workspace: $workspace)
-            MenuHelpCommands(workspace: $workspace)
+            MenuHelpCommands(workspace: $workspace, showUserGuide: $showUserGuide)
         }
     }
 }

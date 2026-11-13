@@ -5,12 +5,10 @@ internal import UniformTypeIdentifiers
 struct StudioView: View {
     @Binding var openedVideoURL: URL?
     @Binding var workspace: StudioWorkspace?
-
-    private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
+    @Binding var showUserGuide: Bool
 
     @ObservedObject private var library = LUTLibraryStore.shared
-    private var catalog: LUTCatalog { library.catalog }
-    private static let noCreativeLook = "__no_creative_look__"
+
     @State private var videoURL: URL?
     @State private var videoHasSecurityScope = false
     @State private var videoSecurityScopeURL: URL?
@@ -23,7 +21,6 @@ struct StudioView: View {
     @State private var status = String(localized: "Ready for your next clip")
     @State private var progress = 0.0
     @State private var showOutputPicker = false
-    @State private var showUserGuide = false
     @State private var errorMessage: String?
     @State private var lastExportURL: URL?
 
@@ -31,6 +28,13 @@ struct StudioView: View {
     @AppStorage("studio.selectedLook") private var selectedLook = "vibrant_pop_v1"
 
     @Environment(\.colorScheme) private var colorScheme
+
+    private static let noCreativeLook = "No creative look"
+    private static let outputFolderBookmarkKey = "studio.outputFolderBookmark"
+
+    private var catalog: LUTCatalog {
+        library.catalog
+    }
 
     private var activeDevice: LUTDevice? {
         catalog.devices.first { $0.id == selectedDevice }
@@ -79,7 +83,7 @@ struct StudioView: View {
         .preferredColorScheme(.dark)
         .fileImporter(isPresented: $showOutputPicker, allowedContentTypes: [.folder], allowsMultipleSelection: false, onCompletion: chooseOutput)
         .sheet(isPresented: $showUserGuide) {
-            UserGuideSheet()
+            UserGuideSheet(showUserGuide: $showUserGuide)
         }
         .navigationSplitViewStyle(.balanced)
         .navigationTransition(.automatic)
