@@ -18,10 +18,10 @@ The macOS application uses Apple's AVFoundation and Core Image frameworks for vi
 
 ## Your workflow, step by step
 
-• Open MOV, MP4, or M4V videos via the file picker or by dragging and dropping.
-• Select the DJI camera profile and the appropriate conversion LUT.
-• Add an optional creative look and fine-tune the sharpness.
-• Export as H.264, HEVC (H.265), ProRes 422, or ProRes 422 HQ.
-• Open completed exports directly and locate previous results in your export history.
+- Open MOV, MP4, or M4V videos via the file picker or by dragging and dropping.
+- Select the DJI camera profile and the appropriate conversion LUT.
+- Add an optional creative look and fine-tune the sharpness.
+- Export as H.264, HEVC (H.265), ProRes 422, or ProRes 422 HQ.
+- Open completed exports directly and locate previous results in your export history.
 
 Video processing leverages Apple’s native video and image processing technologies. Your source file remains untouched; the output is saved as a new video file in your chosen folder. A LUT library and saved folder access help keep your workflow organized. For the best results, select the camera profile that matches the one used to record your clip. The available LUTs and export times will vary depending on your specific setup and your Mac.
